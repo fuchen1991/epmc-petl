@@ -7,7 +7,6 @@ To perform our tool, you need three files: one for model, one for equivalence re
 The input models are described using the PRISM language. Note that we redefine the composition of the modules to make the agents all take one action in each transition (independently on its action), so the transitions from different modules will not synchronize according to the parallel composition operator.
 
 The equivalence relations are described like this:
-==============================
 equiv agent1
 -- formula1;
 -- formula2;
@@ -20,7 +19,7 @@ equiv agent2
 equiv end
 ......
 ......
-==============================
+
 Each agent in the model has a "equiv (agent name) ... equiv end" block, and there are formulas in it. You can use the variables used in the model. All the states satisfying the same formula are regarded as equivalent by the agent. So you can not write formulas such that one state satisfies two or more formulas. If one state can not satisfy any formula, it's not equivalent to any other states.
 
 The knowledge properties are described like this:
