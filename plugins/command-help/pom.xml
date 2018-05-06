@@ -1,0 +1,36 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>epmc.command.help</groupId>
+  <artifactId>epmc-command-help</artifactId>
+  <version>0</version>
+  <parent>
+    <groupId>epmc.pluginbase</groupId>
+    <artifactId>epmc-plugin-base</artifactId>
+    <version>0</version>
+    <relativePath>../plugin-base/pom.xml</relativePath>
+  </parent>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-surefire-plugin</artifactId>
+	<version>2.12.4</version>
+	<configuration>
+	  <skipTests>true</skipTests>
+	</configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>epmc</groupId>
+      <artifactId>epmc</artifactId>
+      <version>0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../../main/target/epmc-0-distribution.jar</systemPath>
+    </dependency>
+  </dependencies>
+</project>

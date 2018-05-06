@@ -1,0 +1,13 @@
+dtmc
+
+const int N;
+const int M;
+
+
+module chain
+  s : [0..N];
+  a : [0..M];
+  [] (s<N) -> (s'=s+1);
+  [] (s=N) -> true;
+  [] (a<M) -> (a'=a+1);
+endmodule
