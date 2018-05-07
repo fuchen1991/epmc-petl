@@ -2,7 +2,7 @@
 
 The code for model checking PETL on MAS is implemented in EPMC. For more information about EPMC, please see https://github.com/liyi-david/ePMC.
 
-To perform our tool, you need three files: one for model, one for equivalence relations, and one for properties.
+To use our tool, you need three files: one for model, one for equivalence relations, and one for properties.
 
 The input models are described using the PRISM language. Note that we redefine the composition of the modules to make the agents all take one action in each transition (independently on its action), so the transitions from different modules will not synchronize according to the parallel composition operator.
 

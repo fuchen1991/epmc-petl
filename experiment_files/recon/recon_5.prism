@@ -1,0 +1,132 @@
+mdp
+
+const int GRID_SIZE = 5;
+const int N = GRID_SIZE-1;
+
+const int BASE_WATER_X = N;
+const int BASE_WATER_Y = N;
+
+const int BASE_CAMERA_X = 0;
+const int BASE_CAMERA_Y = N;
+
+
+const int OBJECT0_X = 1;
+const int OBJECT0_Y = 1;
+const int OBJECT1_X = 1;
+const int OBJECT1_Y = 0;
+const int OBJECT2_X = 0;
+const int OBJECT2_Y = 0;
+const int OBJECT3_X = 1;
+const int OBJECT3_Y = 0;
+
+const int hazard1_X = 1;
+const int hazard1_Y = 0;
+
+const double DETECT_PROB = 0.8;
+const double DETECT_PROB_DAMAGED = 0.4;
+
+formula at_baseWater = false
+	| (agentWater_x = BASE_WATER_X & agentWater_y = BASE_WATER_Y)
+	;
+
+formula at_baseCamera = false
+	| (agentCamera_x = BASE_WATER_X & agentCamera_y = BASE_WATER_Y)
+	;
+
+formula at_object_Water = false
+	| (agentWater_x = OBJECT0_X & agentWater_y = OBJECT0_Y)
+	| (agentWater_x = OBJECT1_X & agentWater_y = OBJECT1_Y)
+	| (agentWater_x = OBJECT2_X & agentWater_y = OBJECT2_Y)
+	| (agentWater_x = OBJECT3_X & agentWater_y = OBJECT3_Y)
+	;
+
+formula at_object_Camera = false
+	| (agentCamera_x = OBJECT0_X & agentCamera_y = OBJECT0_Y)
+	| (agentCamera_x = OBJECT1_X & agentCamera_y = OBJECT1_Y)
+	| (agentCamera_x = OBJECT2_X & agentCamera_y = OBJECT2_Y)
+	| (agentCamera_x = OBJECT3_X & agentCamera_y = OBJECT3_Y)
+	;
+
+formula hazardWater = false
+	| (agentWater_x = hazard1_X & agentWater_y = hazard1_Y)
+	;
+formula near_hazardWater = false
+	| (agentWater_x - hazard1_X = 1 & agentWater_y = hazard1_Y)
+	| (agentWater_x - hazard1_X = -1 & agentWater_y = hazard1_Y)
+	| (agentWater_x = hazard1_X & agentWater_y - hazard1_Y = 1)
+	| (agentWater_x = hazard1_X & agentWater_y - hazard1_Y = -1)
+	;
+
+
+formula hazardCamera = false
+	| (agentCamera_x = hazard1_X & agentCamera_y = hazard1_Y)
+	;
+formula near_hazardCamera = false
+	| (agentCamera_x - hazard1_X = 1 & agentCamera_y = hazard1_Y)
+	| (agentCamera_x - hazard1_X = -1 & agentCamera_y = hazard1_Y)
+	| (agentCamera_x = hazard1_X & agentCamera_y - hazard1_Y = 1)
+	| (agentCamera_x = hazard1_X & agentCamera_y - hazard1_Y = -1)
+	;
+
+module agentWater
+
+	agentWater_x : [0..N] init BASE_WATER_X;
+	agentWater_y : [0..N] init BASE_WATER_Y;
+	
+	//0: water not checked
+	//1: water checked, not found
+	//2: water checked, found
+	object_water : [0..2] init 0; 
+	
+	[agentWater_move_left] agentWater_x > 0 -> 1 : (agentWater_x'=agentWater_x-1);
+	[agentWater_move_right] agentWater_x < N -> 1 : (agentWater_x'=agentWater_x+1);
+	[agentWater_move_down] agentWater_y > 0 -> 1 : (agentWater_y'=agentWater_y-1);
+	[agentWater_move_up] agentWater_y < N -> 1 : (agentWater_y'=agentWater_y+1);
+	
+	[agentWater_repair_water1] at_baseWater & water1_damaged -> 1 : (water1_damaged'=false);
+	
+	[agentWater_check_water] object_water <1 & at_object_Water & water1_damaged -> DETECT_PROB_DAMAGED : (object_water'=2) + (1-DETECT_PROB_DAMAGED) : (object_water'=object_water+1);
+	[agentWater_check_water] object_water < 1 & at_object_Water & !water1_damaged -> DETECT_PROB : (object_water'=2) + (1-DETECT_PROB) : (object_water'=object_water+1);
+endmodule
+
+module agentCamera
+
+	agentCamera_x : [0..N] init BASE_CAMERA_X;
+	agentCamera_y : [0..N] init BASE_CAMERA_Y;
+	
+	//0: picture not checked
+	//1: picture checked, not found
+	//2: picture checked, found
+	object_picture : [0..2] init 0; 
+	
+	[agentCamera_move_left] agentCamera_x > 0 -> 1 : (agentCamera_x'=agentCamera_x-1);
+	[agentCamera_move_right] agentCamera_x < N -> 1 : (agentCamera_x'=agentCamera_x+1);
+	[agentCamera_move_down] agentCamera_y > 0 -> 1 : (agentCamera_y'=agentCamera_y-1);
+	[agentCamera_move_up] agentCamera_y < N -> 1 : (agentCamera_y'=agentCamera_y+1);
+	
+	[agentCamera_repair_camera1] at_baseCamera & camera1_damaged -> 1 : (camera1_damaged'=false);
+	
+	[agentCamera_take_picture] object_picture < 1 & at_object_Camera & camera1_damaged -> DETECT_PROB_DAMAGED : (object_picture'=2) + (1-DETECT_PROB_DAMAGED) : (object_picture'=object_picture+1);
+	[agentCamera_take_picture] object_picture < 1 & at_object_Camera & !camera1_damaged -> DETECT_PROB : (object_picture'=2) + (1-DETECT_PROB) : (object_picture'=object_picture+1);
+endmodule
+
+const double DAMAGE_PROB_C1 = 0.00001;
+module camera1
+	camera1_damaged : bool init false;
+	
+	[agentCamera_move] hazardCamera & !at_baseCamera -> DAMAGE_PROB_C1 : (camera1_damaged'=true) + (1-DAMAGE_PROB_C1) : true;
+	[agentCamera_move] !hazardCamera & near_hazardCamera & !at_baseCamera -> DAMAGE_PROB_C1/2 : (camera1_damaged'=true) + (1-DAMAGE_PROB_C1/2) : true;
+	[agentCamera_move] !hazardCamera & !near_hazardCamera & !at_baseCamera -> true;
+	[agentCamera_move] at_baseCamera -> true;
+endmodule
+
+const double DAMAGE_PROB_W1 = 0.29898286;
+module water1
+	water1_damaged : bool init false;
+
+	[agentWater_move] hazardWater & !at_baseWater -> DAMAGE_PROB_W1 : (water1_damaged'=true) + (1-DAMAGE_PROB_W1) : true;
+	[agentWater_move] !hazardWater & near_hazardWater & !at_baseWater -> DAMAGE_PROB_W1/2 : (water1_damaged'=true) + (1-DAMAGE_PROB_W1/2) : true;
+	[agentWater_move] !hazardWater & !near_hazardWater & !at_baseWater -> true;
+	[agentWater_move] at_baseWater -> true;
+endmodule
+
