@@ -1,6 +1,8 @@
 ## Model Checking Probabilistic Epistemic Logic for Probabilistic Multiagent Systems
 
-This tool is implemented as a plugin in ePMC. For building, running and other information about ePMC, please visit https://github.com/liyi-david/ePMC.
+This tool is implemented as a plugin in ePMC. All the implementation details related to PETL model checking are under "epmc-petl/plugins/propertysolver-petl". And you can find the experiment files used in the paper under "experiment_files". For building, running and other information about ePMC, please visit https://github.com/liyi-david/ePMC. 
+
+For more information about the PETL model checking algorithm, please visit https://www.ijcai.org/proceedings/2018/661.
 
 To perform PETL model checking, you need to prepare 3 files: one for the model, one for equivalence relations, and one for properties.
 
