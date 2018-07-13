@@ -24,6 +24,8 @@ equiv end
 Each agent in the model has a "equiv (agent name) ... equiv end" block, and each block contains a set of formulas. You can use the variables used in the model. All the states satisfying the same formula are regarded as equivalent by the agent. So you can not write formulas such that one state satisfies two or more formulas. If one state can not satisfy any formula, it's not equivalent to any other states.
 
 The knowledge properties are described like this:
+```
 K {agent}  (state_formula)
 E/C/D {agent1,..., agentn}  (state_formula)
+```
 Other properties are described using the PRISM property specification language.
