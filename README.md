@@ -4,7 +4,7 @@ This tool is implemented as a plugin in ePMC. For building, running and other in
 
 To perform PETL model checking, you need to prepare 3 files: one for the model, one for equivalence relations, and one for properties.
 
-The input models are described using the PRISM language. Note that we redefine the composition of the modules to make the agents all take one local action in each transition, so the transitions from different modules will not synchronize according to the parallel composition operator.
+The input models are described using the PRISM language(http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction). Note that we redefine the composition of the modules to make the agents all take one local action in each transition, so the transitions from different modules will not synchronize according to the parallel composition operator.
 
 The equivalence relations are described in this format:
 ```
@@ -28,4 +28,4 @@ The knowledge properties are described like this:
 K {agent}  (state_formula)
 E/C/D {agent1,..., agentn}  (state_formula)
 ```
-Other properties are described using the PRISM property specification language.
+Other properties are described using the PRISM property specification language(http://www.prismmodelchecker.org/manual/PropertySpecification/Introduction).
