@@ -4,7 +4,19 @@ This tool is implemented as a plugin in ePMC. All the implementation details rel
 
 For more information about the PETL model checking algorithm, please visit https://www.ijcai.org/proceedings/2018/661.
 
-To perform PETL model checking, you need to prepare 3 files: one for the model, one for equivalence relations, and one for properties.
+To perform PETL model checking, please set the following options:
+```
+--property-solver propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,pctl-explicit-until-uniform
+--prism-flatten false
+--model-input-type mas
+--property-input-type petl
+--smtlib-command-line z3 -smt2 {0} 
+--smtlib-version v25 
+--constraintsolver-solver smt-lib 
+--model-input-files /path/to/your-model /path/to/your-equivalence-relation 
+--property-input-files /path/to/your-property
+```
+You need to prepare 3 files: one for the model, one for equivalence relations, and one for properties.
 
 The models should be in the PRISM format(http://www.prismmodelchecker.org/manual/ThePRISMLanguage). Note that we redefine the composition of the modules to make the agents all take one local action in each transition, so the transitions from different modules will not synchronize according to the parallel composition operator.
 
