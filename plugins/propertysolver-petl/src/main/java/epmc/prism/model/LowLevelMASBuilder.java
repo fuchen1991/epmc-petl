@@ -114,9 +114,9 @@ public class LowLevelMASBuilder implements LowLevel.Builder {
             ModelJANI jani = toJANI(false);
             return UtilModelChecker.buildLowLevel(jani, engine,
                     graphProperties, nodeProperties, edgeProperties);
-        } else if (engine instanceof EngineDD){
-            ((ModelPRISM) model).prepareAndCheckReady();
-            return new GraphDDPRISM((ModelPRISM) model, nodeProperties, edgeProperties);
+//        } else if (engine instanceof EngineDD){
+//            ((ModelPRISM) model).prepareAndCheckReady();
+//            return new GraphDDPRISM((ModelPRISM) model, nodeProperties, edgeProperties);
         } else {
             return null;
         }

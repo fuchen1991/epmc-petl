@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Created-By: 1.7.0_51 (Oracle Corporation)
+Built-By: fuchen
+Build-Jdk: 9
+EPMC-Plugin: true
+Plugin-Name: graphsolver-iterative
+Plugin-Dependencies: util value-basic expression-basic graphsolver alg
+ orithm graph
+

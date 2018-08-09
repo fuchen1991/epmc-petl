@@ -163,7 +163,7 @@
         </configuration>
       </plugin>
       <plugin>
-        <version>2.6</version>
+        <version>3.0.2</version>
         <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
           <configuration>

@@ -986,7 +986,7 @@ public final class ModelPRISM implements ModelJANIConverter {
         return formulas;
     }
 
-    Map<Expression,Expression> getGlobalInitValues() {
+    public Map<Expression,Expression> getGlobalInitValues() {
         return publicGlobalInitValues;
     }
 
