@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import epmc.expression.Expression;
 import epmc.expression.standard.ExpressionIdentifier;
@@ -18,12 +19,16 @@ import epmc.expression.standard.ExpressionTemporalGlobally;
 import epmc.expression.standard.ExpressionTemporalNext;
 import epmc.expression.standard.ExpressionTemporalRelease;
 import epmc.expression.standard.ExpressionTemporalUntil;
+import epmc.graph.CommonProperties;
+import epmc.graph.explicit.GraphExplicit;
+import epmc.graph.explicit.NodeProperty;
 import epmc.modelchecker.ModelChecker;
 import epmc.petl.model.EquivalenceClasses;
 import epmc.petl.model.ExpressionKnowledge;
 import epmc.petl.model.KnowledgeType;
 import epmc.prism.model.PropertyPRISM;
 import epmc.util.BitSet;
+import epmc.util.UtilBitSet;
 
 public class UtilPETL {
 	private static EquivalenceClasses equivalenceClasses;
@@ -277,6 +282,89 @@ public class UtilPETL {
         }
         return false;
     }
+	
+	static BitSet getUnKnownStates(BitSet oneSet, BitSet zeroSet, GraphExplicit graph)
+	{
+		BitSet unKnown = UtilBitSet.newBitSetUnbounded();
+		int nodeNum = graph.getNumNodes();
+		
+		NodeProperty stateProp = graph.getNodeProperty(CommonProperties.STATE);
+        for(int i=0;i<nodeNum;i++)
+        {
+        	if (!stateProp.getBoolean(i) || oneSet.get(i) || zeroSet.get(i)) {
+                continue;
+            }
+        	unKnown.set(i);
+        }
+        
+        //unKnown states should be able to reach some oneState, otherwise they are zeroState
+        BitSet canReach = UtilBitSet.newBitSetUnbounded();
+        for(int i=unKnown.nextSetBit(0);i>=0 && i<nodeNum;i=unKnown.nextSetBit(i+1))
+        {
+        	Stack<Integer> stack = new Stack<Integer>();
+        	stack.push(i);
+        	BitSet visited = UtilBitSet.newBitSetUnbounded();
+        	visited.set(i);
+        	boolean canReachOneState =false;
+        	while(!stack.isEmpty())
+        	{
+        		int state = stack.pop();
+        		int numSucc = graph.getNumSuccessors(state);
+        		boolean found_outer = false;
+        		for (int succNr = 0; succNr < numSucc; succNr++)
+        		{
+        			int succ = graph.getSuccessorNode(state, succNr);
+        			assert !stateProp.getBoolean(succ);
+                    
+                    int num_Succ = graph.getNumSuccessors(succ);
+                    boolean found_inner = false;
+                    for(int nr=0;nr<num_Succ;nr++)
+                    {
+                    	int succState = graph.getSuccessorNode(succ, nr);
+                    	if(oneSet.get(succState))
+                    	{
+                    		canReach.set(i);
+                    		found_inner = true;
+                    		break;
+                    	}
+                    	else if(canReach.get(succState))
+                    	{
+                    		found_inner = true;
+                    		break;
+                    	}
+                    	else
+                    	{
+                    		if(!visited.get(succState))
+                    		{
+                    			visited.set(succState);
+                    			if(!zeroSet.get(succState))
+                    				stack.push(succState);
+                    		}
+                    	}
+                    }
+                    if(found_inner)
+                    {
+                    	found_outer = true;
+                    	break;
+                    }
+        		}
+        		if(found_outer)
+        		{
+        			canReachOneState = true;
+        			break;
+        		}
+        	}
+        	if(!canReachOneState)
+        	{
+        		for(int k= visited.nextSetBit(0);k>=0 && k<nodeNum;k=visited.nextSetBit(k+1))
+            	{
+            		zeroSet.set(k);
+            		unKnown.clear(k);
+            	}
+        	}
+        }
+        return unKnown;
+	}
 	
 	public static Expression parseExpression(String exp)
 	{

@@ -3,7 +3,6 @@ package epmc.propertysolver;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import epmc.constraintsolver.ConstraintSolver;
 import epmc.expression.Expression;
 import epmc.expression.standard.DirType;
 import epmc.expression.standard.ExpressionLiteral;
@@ -46,14 +45,40 @@ import epmc.value.ValueArray;
 import epmc.value.ValueBoolean;
 import epmc.value.ValueDouble;
 
-public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
-	public final static String IDENTIFIER = "pctl-explicit-until-uniform";
-    private ModelChecker modelChecker;
+public class PropertySolverExplicitApproximationUntilUniform implements PropertySolver{
+	public final static String IDENTIFIER = "uct-until-uniform";
+	private ModelChecker modelChecker;
     private GraphExplicit graph;
     private StateSetExplicit computeForStates;
     private Expression property;
     private StateSet forStates;
-    
+
+	@Override
+	public String getIdentifier() {
+		return IDENTIFIER;
+	}
+
+	@Override
+	public void setModelChecker(ModelChecker modelChecker) {
+		assert modelChecker != null;
+        this.modelChecker = modelChecker;
+        if (modelChecker.getEngine() instanceof EngineExplicit) {
+            this.graph = modelChecker.getLowLevel();
+        }
+	}
+
+	@Override
+	public void setProperty(Expression property) {
+		this.property = property;
+		
+	}
+
+	@Override
+	public void setForStates(StateSet forStates) {
+		this.forStates = forStates;
+		
+	}
+
 	@Override
 	public boolean canHandle() {
 		assert property != null;
@@ -93,7 +118,42 @@ public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
         }
         return true;
 	}
-	
+
+	@Override
+	public Set<Object> getRequiredGraphProperties() {
+		Set<Object> required = new LinkedHashSet<>();
+        required.add(CommonProperties.SEMANTICS);
+        return required;
+	}
+
+	@Override
+	public Set<Object> getRequiredNodeProperties() {
+		Set<Object> required = new LinkedHashSet<>();
+        required.add(CommonProperties.STATE);
+        required.add(CommonProperties.PLAYER);
+        ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
+        Set<Expression> inners = UtilPETL.collectPCTLInner(propertyQuantifier.getQuantified());
+        StateSet allStates = UtilGraph.computeAllStatesExplicit(modelChecker.getLowLevel());
+        for (Expression inner : inners) {
+            required.addAll(modelChecker.getRequiredNodeProperties(inner, allStates));
+        }
+
+        Set<Expression> expOfEquiv = ((ModelMAS) modelChecker.getModel()).getEquivalenceRelations().getAllExpressions();
+        for (Expression inner : expOfEquiv) {
+            required.addAll(modelChecker.getRequiredNodeProperties(inner, allStates));
+        }
+        
+        return required;
+	}
+
+	@Override
+	public Set<Object> getRequiredEdgeProperties() {
+		Set<Object> required = new LinkedHashSet<>();
+        required.add(CommonProperties.WEIGHT);
+        required.add(CommonProperties.TRANSITION_LABEL);
+        return required;
+	}
+
 	@Override
 	public StateMap solve() {
 		assert property != null;
@@ -101,10 +161,10 @@ public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
         assert property instanceof ExpressionQuantifier;
 		StateSetExplicit forStatesExplicit = (StateSetExplicit) forStates;
         graph.explore(forStatesExplicit.getStatesExplicit());
-        //printFile(graph.toString().replaceAll("\"name", "name").replaceAll("\":\"", ":").replaceAll("\"}", "}"));    
         ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
         Expression quantifiedProp = propertyQuantifier.getQuantified();
         DirType dirType = ExpressionQuantifier.computeQuantifierDirType(propertyQuantifier);
+        
         StateMap result = doSolve(quantifiedProp, forStates, dirType.isMin());
         if (!propertyQuantifier.getCompareType().isIs()) {
             StateMap compare = modelChecker.check(propertyQuantifier.getCompare(), forStates);
@@ -114,7 +174,7 @@ public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
         }
         return result;
 	}
-
+	
 	private StateMap doSolve(Expression property, StateSet states, boolean min) {
 		boolean negate;
         if (isNot(property)) {
@@ -204,11 +264,8 @@ public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
             }
         }
         BitSet unKnown = UtilPETL.getUnKnownStates(oneSet, zeroSet, graph);
-        //System.out.println(graph.toString().replaceAll("\"name", "name").replaceAll("\":\"", ":").replaceAll("\"}", "}"));
-
-        ConstraintSolver solver = UtilConstraints.setBasicConstraints(unKnown,oneSet,zeroSet,graph,modelChecker);
-        double[] resultValue = UtilConstraints.computeProbabilities(solver, oneSet, zeroSet, min, negate,unKnown, computeForStates, graph,modelChecker);
-
+        double[] resultValue = UtilApproximation.computeProbabilities(oneSet, zeroSet, min, negate,unKnown, computeForStates, graph,modelChecker);
+        
         Type type = TypeDouble.get();
         ValueArray resultValues = UtilValue.newArray(type.getTypeArray(), computeForStates.size());
         for (int stateNr = 0; stateNr < computeForStates.size(); stateNr++) {
@@ -216,70 +273,9 @@ public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
             value.set(resultValue[stateNr]);
             resultValues.set(value, stateNr);
         }
-
 		return UtilGraph.newStateMap(computeForStates.clone(), resultValues);
 	}
 	
-	@Override
-	public Set<Object> getRequiredGraphProperties() {
-		Set<Object> required = new LinkedHashSet<>();
-        required.add(CommonProperties.SEMANTICS);
-        return required;
-	}
-
-	@Override
-	public Set<Object> getRequiredNodeProperties() {
-		Set<Object> required = new LinkedHashSet<>();
-        required.add(CommonProperties.STATE);
-        required.add(CommonProperties.PLAYER);
-        ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
-        Set<Expression> inners = UtilPETL.collectPCTLInner(propertyQuantifier.getQuantified());
-        StateSet allStates = UtilGraph.computeAllStatesExplicit(modelChecker.getLowLevel());
-        for (Expression inner : inners) {
-            required.addAll(modelChecker.getRequiredNodeProperties(inner, allStates));
-        }
-
-        Set<Expression> expOfEquiv = ((ModelMAS) modelChecker.getModel()).getEquivalenceRelations().getAllExpressions();
-        for (Expression inner : expOfEquiv) {
-            required.addAll(modelChecker.getRequiredNodeProperties(inner, allStates));
-        }
-        
-        return required;
-	}
-
-	@Override
-	public Set<Object> getRequiredEdgeProperties() {
-		Set<Object> required = new LinkedHashSet<>();
-        required.add(CommonProperties.WEIGHT);
-        required.add(CommonProperties.TRANSITION_LABEL);
-        return required;
-	}
-
-	@Override
-	public String getIdentifier() {
-		return IDENTIFIER;
-	}
-
-	@Override
-	public void setModelChecker(ModelChecker modelChecker) {
-		assert modelChecker != null;
-        this.modelChecker = modelChecker;
-        if (modelChecker.getEngine() instanceof EngineExplicit) {
-            this.graph = modelChecker.getLowLevel();
-        }
-	}
-
-	@Override
-	public void setProperty(Expression property) {
-		this.property = property;
-	}
-
-	@Override
-	public void setForStates(StateSet forStates) {
-		this.forStates = forStates;
-		
-	}
-
 	private void handleSimplePCTLExtensions() {
 		ExpressionQuantifier propertyQuantifier = ExpressionQuantifier.as(property);
         Expression quantified = propertyQuantifier.getQuantified();
@@ -306,7 +302,7 @@ public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
                     .build();
         }
     }
-	
+
 	private static boolean isNot(Expression expression) {
         if (!(expression instanceof ExpressionOperator)) {
             return false;
@@ -319,8 +315,8 @@ public class PropertySolverExplicitPCTLUntilUniform implements PropertySolver {
 	private static boolean isFinally(Expression expression) {
         return ExpressionTemporalFinally.is(expression);
     }
-
-    private static boolean isGlobally(Expression expression) {
+	
+	private static boolean isGlobally(Expression expression) {
         return ExpressionTemporalGlobally.is(expression);
     }
 

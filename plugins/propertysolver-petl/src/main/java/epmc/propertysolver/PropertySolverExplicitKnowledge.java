@@ -6,13 +6,11 @@ import java.util.List;
 import java.util.Set;
 
 import epmc.expression.Expression;
-import epmc.expression.standard.ExpressionQuantifier;
 import epmc.expression.standard.evaluatorexplicit.EvaluatorExplicitBoolean;
 import epmc.expression.standard.evaluatorexplicit.UtilEvaluatorExplicit;
 import epmc.graph.CommonProperties;
 import epmc.graph.Semantics;
 import epmc.graph.SemanticsDTMC;
-import epmc.graph.SemanticsDiscreteTime;
 import epmc.graph.SemanticsMDP;
 import epmc.graph.StateMap;
 import epmc.graph.StateSet;
@@ -51,6 +49,7 @@ public class PropertySolverExplicitKnowledge implements PropertySolver {
         if (!SemanticsDTMC.isDTMC(semantics) && !SemanticsMDP.isMDP(semantics)) {
             return false;
         }
+        
         if (!(property instanceof ExpressionKnowledge)) {
             return false;
         }

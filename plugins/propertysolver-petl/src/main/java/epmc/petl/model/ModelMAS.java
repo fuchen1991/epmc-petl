@@ -212,6 +212,10 @@ public class ModelMAS implements ModelJANIConverter{
 		return this.synModelPrism.toJANI(forExporting);
 	}
 
+	public ModelPRISM getSynModel() {
+		return synModelPrism;
+	}
+	
 	public EquivalenceRelations getEquivalenceRelations() {
 		return equivalenceRelations;
 	}
