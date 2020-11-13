@@ -31,7 +31,9 @@ import epmc.modelchecker.options.OptionsModelChecker;
 import epmc.options.Category;
 import epmc.options.OptionTypeBoolean;
 import epmc.options.OptionTypeEnum;
+import epmc.options.OptionTypeInteger;
 import epmc.options.OptionTypeMap;
+import epmc.options.OptionTypeString;
 import epmc.options.OptionTypeStringList;
 import epmc.options.Options;
 import epmc.petl.constraintsolver.smtlib.options.OptionsSMTLib;
@@ -42,6 +44,7 @@ import epmc.petl.model.PropertyPETL;
 import epmc.plugin.AfterOptionsCreation;
 import epmc.prism.model.convert.UtilPrismConverter;
 import epmc.prism.options.OptionsPRISM;
+import epmc.propertysolver.OptionsUCT;
 import epmc.propertysolver.PropertySolverExplicitApproximationUntilUniform;
 import epmc.propertysolver.PropertySolverExplicitKnowledge;
 import epmc.propertysolver.PropertySolverExplicitPCTLUntilUniform;
@@ -120,6 +123,48 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         .setCategory(category)
         .setType(typeSMTLibVersion)
         .setDefault(SMTLibVersion.V20)
+        .setCommandLine().setGui().setWeb()
+        .build();
+        
+        OptionTypeInteger typeUCTInteger = OptionTypeInteger.getInstance();
+        options.addOption()
+        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setIdentifier(OptionsUCT.UCT_DEPTH_LIMIT)
+        .setType(typeUCTInteger)
+        .setDefault(10)
+        .setCommandLine().setGui().setWeb()
+        .build();
+        
+        options.addOption()
+        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setIdentifier(OptionsUCT.UCT_TIME_LIMIT)
+        .setType(typeUCTInteger)
+        .setDefault(1)
+        .setCommandLine().setGui().setWeb()
+        .build();
+        
+        options.addOption()
+        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setIdentifier(OptionsUCT.RANDOM_SEED)
+        .setType(typeUCTInteger)
+        .setDefault(1)
+        .setCommandLine().setGui().setWeb()
+        .build();
+        
+        options.addOption()
+        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setIdentifier(OptionsUCT.PRINT_TIME_INTERVAL)
+        .setType(typeUCTInteger)
+        .setDefault(1)
+        .setCommandLine().setGui().setWeb()
+        .build();
+        
+        //OptionTypeString typeUCTString = OptionTypeString.getInstance();
+        options.addOption()
+        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setIdentifier(OptionsUCT.BVALUE)
+        .setType(typeUCTInteger)
+        .setDefault(1)
         .setCommandLine().setGui().setWeb()
         .build();
     }

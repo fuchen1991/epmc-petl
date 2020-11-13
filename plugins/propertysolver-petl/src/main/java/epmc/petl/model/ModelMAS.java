@@ -4,41 +4,33 @@ import static epmc.error.UtilError.ensure;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import epmc.error.Positional;
 import epmc.expression.Expression;
 import epmc.expression.standard.ExpressionIdentifierStandard;
 import epmc.expression.standard.ExpressionOperator;
 import epmc.expression.standard.UtilExpressionStandard;
-import epmc.graph.LowLevel;
 import epmc.graph.Semantics;
 import epmc.graph.SemanticsDTMC;
 import epmc.jani.model.ModelJANI;
 import epmc.jani.model.ModelJANIConverter;
 import epmc.jani.model.type.JANIType;
 import epmc.messages.OptionsMessages;
-import epmc.modelchecker.Engine;
 import epmc.modelchecker.Log;
 import epmc.modelchecker.Properties;
 import epmc.operator.OperatorAnd;
 import epmc.operator.OperatorMultiply;
-import epmc.options.Option;
 import epmc.options.Options;
 import epmc.petl.error.ProblemsPETL;
 import epmc.petl.relation.EquivalenceRelationsParser;
-import epmc.prism.error.ProblemsPRISM;
 import epmc.prism.messages.MessagesPRISM;
 import epmc.prism.model.Alternative;
 import epmc.prism.model.Command;
 import epmc.prism.model.ModelPRISM;
 import epmc.prism.model.Module;
 import epmc.prism.model.ModuleCommands;
-import epmc.prism.options.OptionsPRISM;
 
 /**
  * MAS(Multi Agent System) model representation.
