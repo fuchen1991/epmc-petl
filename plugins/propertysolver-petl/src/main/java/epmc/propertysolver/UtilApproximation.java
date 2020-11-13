@@ -1,7 +1,5 @@
 package epmc.propertysolver;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +29,6 @@ public class UtilApproximation {
 	private static ModelChecker modelChecker;
 	private static GraphExplicit graph;
 	private static List<String> players;
-//	private static NodeProperty isState;
 	private static EdgeProperty actionLabel;
 	private static EdgeProperty probability;
 	private static String emptyAction = "";
@@ -46,7 +43,6 @@ public class UtilApproximation {
 	{
 		modelChecker = mc;
 		graph = gh;
-//		isState = graph.getNodeProperty(CommonProperties.STATE);
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
 		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
@@ -92,9 +88,7 @@ public class UtilApproximation {
 			}
 			else
 			{
-				//double result = firstExploreThenUCT(state, oneSet, zeroSet, min);
 				double result = exploreWhenUCT(state, oneSet, zeroSet, min);
-				//double result = exploreWhenUCT_rolloutOneSuccessor(state, oneSet, zeroSet, min);
 				if(negate)
 					resultValue[i] = 1.0 - result;
 				else
@@ -120,7 +114,6 @@ public class UtilApproximation {
 		{
 			while(watch.getTimeSeconds() < timeLimit)
 			{
-				//if(watch.getTimeSeconds() - elapsed >= printTimeInterval)
 				if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 				{
 					elapsed += printTimeInterval;
@@ -128,7 +121,6 @@ public class UtilApproximation {
 				}
 				root.increaseVisitedTimes();
 				rolloutTimes += 1;
-				//rollout_min_onthefly(root, depthLimit, new ArrayList<FixedAction>(),min);
 				rollout_min_onthefly_maxnotB(root, depthLimit, new ArrayList<FixedAction>(), min);
 				//if(root.getR() == 0.0)
 				//	break;
@@ -138,10 +130,8 @@ public class UtilApproximation {
 		{
 			while(watch.getTimeSeconds() < timeLimit)
 			{
-				//if(watch.getTimeSeconds() - elapsed >= printTimeInterval)
 				if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 				{
-					//elapsed = watch.getTimeSeconds();
 					elapsed += printTimeInterval;
 					System.out.println("Elapsed time: " +  elapsed + "s Current result: " + root.getR()+ " rollouts: " + rolloutTimes + " nodes: " + constructedNode);
 				}
@@ -156,8 +146,7 @@ public class UtilApproximation {
 		double final_res = root.getR();
 		if(min)
 			final_res = 1 - final_res;
-		//printScheduler(root, oneSet, zeroSet);
-		System.out.println("============================\nExplore all successors:");
+		System.out.println("============================");
 		System.out.println("Final result: " + final_res);
 		System.out.println("Number of rollouts: " + rolloutTimes);
 		System.out.println("Number of nodes: " + constructedNode);
@@ -180,7 +169,6 @@ public class UtilApproximation {
 			}
 			next.increaseVisitedTimes();
 			addFixedActionInLocation(fixedActions, node, next);
-			//res = rollout_max_onthefly(next,depth, addFixedAction(fixedActions, node, next),min);
 			res = rollout_max_onthefly(next,depth, fixedActions,min);
 		}
 		else
@@ -234,7 +222,6 @@ public class UtilApproximation {
 			}
 			next.increaseVisitedTimes();
 			addFixedActionInLocation(fixedActions, node, next);
-			//res = rollout_min_onthefly(next,depth, addFixedAction(fixedActions, node, next),min);
 			res = rollout_min_onthefly_maxnotB(next,depth, fixedActions,min);
 		}
 		else
@@ -272,76 +259,6 @@ public class UtilApproximation {
 		return res;
 	}
 	
-	private static double rollout_min_onthefly(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
-	{
-		if(depth == 0)
-			return -1.0;
-		double res = 0.0;
-		UCTNode next = null;
-		if(node.isDecision())
-		{
-			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
-			next = choseUnvisitedSucc(successors);
-			if(next == null)
-			{
-				next = chooseSuccByUCT(node, successors);
-			}
-			next.increaseVisitedTimes();
-			addFixedActionInLocation(fixedActions, node, next);
-			//res = rollout_min_onthefly(next,depth, addFixedAction(fixedActions, node, next),min);
-			res = rollout_min_onthefly(next,depth, fixedActions,min);
-		}
-		else
-		{
-			for(UCTNode succ : node.getSuccessors())
-			{
-				succ.increaseVisitedTimes();
-				double rs = -1 * succ.getProbability();
-				if(oneStates.get(succ.getState()))
-				{
-					rs = -1 * succ.getProbability();
-				}
-				else if(zeroStates.get(succ.getState()))
-				{
-					rs = 0.0;
-				}
-				else// if(depth > 0)
-				{
-					if(depth > 0 && !succ.isInitialized())
-						exploreSearchTreeOnTheFly(succ, min);
-					rs = succ.getProbability() * rollout_min_onthefly(succ, depth-1, fixedActions,min);
-				}
-				res += rs;
-			}
-		}
-		if(res > node.getR())
-		{
-			if(node.isDecision())
-			{
-				node.setBestSucc(next);
-			}
-			node.setR(res);
-		}
-		
-		return res;
-	}
-	
-//	private static List<FixedAction> addFixedAction(List<FixedAction> fixedActions, UCTNode node, UCTNode next)
-//	{
-//		List<FixedAction> newFixedActions = new ArrayList<FixedAction>(fixedActions);
-//		String globalAction = next.getAction();
-//		//String[] localActions = globalAction.split(",");
-//		int state = node.getState();
-//		for(int i=0;i<players.size();i++)
-//		{
-//			FixedAction fa = new FixedAction(players.get(i), state, globalAction);
-//			if(!fixedActions.contains(fa))
-//			{
-//				newFixedActions.add(fa);
-//			}
-//		}
-//		return newFixedActions;
-//	}
 	
 	private static void addFixedActionInLocation(List<FixedAction> fixedActions, UCTNode node, UCTNode next)
 	{
@@ -392,26 +309,7 @@ public class UtilApproximation {
 		}
 		return remaining;
 	}
-	
-//	private String fixedActionToString(List<FixedAction> actions)
-//	{
-//		Set<String> all = new HashSet<String>();
-//		for(FixedAction fa : actions)
-//		{
-//			BitSet bs = equivalenceClasses.getClassFor(fa.player, fa.state);
-//			String str = fa.player + "_" + bs.toString() + "_" + fa.action;
-//			all.add(str);
-//		}
-//		List<String> strList = new ArrayList<String>(all);
-//		Collections.sort(strList);
-//		StringBuilder builder = new StringBuilder();
-//		for(String s : strList)
-//		{
-//			builder.append(s);
-//		}
-//		return builder.toString();
-//	}
-	
+
 	private static UCTNode choseUnvisitedSucc(List<UCTNode> successors)
 	{
 		List<Integer> indexes = new ArrayList<Integer>();
@@ -460,10 +358,6 @@ public class UtilApproximation {
 		{
 			res = node.getR();
 		}
-		if(node.getR() < 0)
-		{
-			res = 1 + node.getR();
-		}
 		return res * bValueCoefficient;
 	}
 	
@@ -503,424 +397,4 @@ public class UtilApproximation {
 		node.setInitialized(true);
 	}
 	
-	private static double exploreWhenUCT_rolloutOneSuccessor(int state, BitSet oneSet, BitSet zeroSet, boolean min)
-	{
-		System.out.println("Depth limit: " + depthLimit);
-		System.out.println("Time limit: " + timeLimit);
-		System.out.println("B value Coefficient: " + bValueCoefficient);
-		System.out.println("Random seed: " + seed);
-		UCTNode root = constructNode(state, emptyAction, true, min);
-		exploreSearchTreeOnTheFly(root, min);
-		System.out.println("Start to rollout...");
-		int rolloutTimes = 0;
-		long elapsed = 0;
-		StopWatch watch = new StopWatch(true);
-		if(min)
-		{
-			while(watch.getTimeSeconds() < timeLimit)
-			{
-				if(watch.getTimeSeconds() - elapsed >= printTimeInterval)
-				{
-					elapsed = watch.getTimeSeconds();
-					System.out.println("Remaining time: " + (timeLimit - watch.getTimeSeconds()) + "s" + " Current rollout: " + rolloutTimes + " Current result: " + root.getR()+ " Current nodes: " + constructedNode);
-				}
-				root.increaseVisitedTimes();
-				rolloutTimes += 1;
-				rollout_min_onthefly_oneSuccessor(root, depthLimit, new ArrayList<FixedAction>(),min);
-				if(root.getR() == 0.0)
-					break;
-			}
-		}
-		else
-		{
-			while(watch.getTimeSeconds() < timeLimit)
-			{
-				if(watch.getTimeSeconds() - elapsed >= printTimeInterval)
-				{
-					elapsed = watch.getTimeSeconds();
-					System.out.println("Remaining time: " + (timeLimit - watch.getTimeSeconds()) + "s" + " Current rollout: " + rolloutTimes + " Current result: " + root.getR()+ " Current nodes: " + constructedNode);
-				}
-				root.increaseVisitedTimes();
-				rolloutTimes += 1;
-				rollout_max_onthefly_oneSuccessor(root, depthLimit, new ArrayList<FixedAction>(),min);
-				if(root.getR() == 1.0)
-					break;
-			}
-		}
-		
-		printScheduler(root, oneSet, zeroSet);
-		System.out.println("============================\nExplore one successor:");
-		System.out.println("Times of rollouts: " + rolloutTimes);
-		System.out.println("Number of nodes: " + constructedNode);
-		return root.getR();
-	}
-	
-	private static double rollout_max_onthefly_oneSuccessor(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
-	{
-		if(depth == 0)
-			return 0.0;
-		double res = 0.0;
-		UCTNode next = null;
-		if(node.isDecision())
-		{
-			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
-			next = choseUnvisitedSucc(successors);
-			if(next == null)
-			{
-				next = chooseSuccByUCT(node, successors);
-			}
-			next.increaseVisitedTimes();
-			addFixedActionInLocation(fixedActions, node, next);
-			res = rollout_max_onthefly_oneSuccessor(next,depth, fixedActions,min);
-		}
-		else
-		{
-			int ii = random.nextInt(node.getSuccessors().size());
-			UCTNode succ = node.getSuccessors().get(ii);
-			succ.increaseVisitedTimes();
-			//System.out.println(node.getSuccessors().size());
-//			if(oneStates.get(succ.getState()))
-//			{
-//				System.out.println(succ.getState());
-//			}
-			if( !(oneStates.get(succ.getState()) || zeroStates.get(succ.getState())))
-			{
-				if(depth > 0 && !succ.isInitialized())
-					exploreSearchTreeOnTheFly(succ, min);
-				rollout_max_onthefly_oneSuccessor(succ, depth-1, fixedActions,min);
-			}
-			res = addupSuccessorProbability(node, fixedActions,false);
-		}
-		List<FixedAction> newFixedActions = new ArrayList<FixedAction>(fixedActions);
-		if(node.getRByFixedActions(newFixedActions) < res)
-			node.setRByFixedActions(newFixedActions, res);
-		
-		if(res > node.getR())
-		{
-			if(node.isDecision())
-			{
-				node.setBestSucc(next);
-			}
-			node.setR(res);
-		}
-		return res;
-	}
-	
-	private static double addupSuccessorProbability(UCTNode node, List<FixedAction> fixedActions, boolean min)
-	{
-		double res = 0.0;
-		for(UCTNode iter : node.getSuccessors())
-		{
-			double rs = 0.0;
-			if(oneStates.get(iter.getState()))
-			{
-				if(min)
-					rs = -1;
-				else
-					rs = 1;
-				//System.out.println(iter.getState());
-			}
-			else if(zeroStates.get(iter.getState()))
-			{
-				rs = 0.0;
-			}
-			else
-			{
-				rs = iter.getRByFixedActions(fixedActions);
-				if(rs == -1 && !min)
-				{
-					rs = 0.0;
-				}
-			}
-			res += iter.getProbability() * rs;
-		}
-		return res;
-	}
-	
-	private static double rollout_min_onthefly_oneSuccessor(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
-	{
-		if(depth == 0)
-			return -1;
-		double res = 0.0;
-		UCTNode next = null;
-		if(node.isDecision())
-		{
-			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
-			next = choseUnvisitedSucc(successors);
-			if(next == null)
-			{
-				next = chooseSuccByUCT(node, successors);
-			}
-			next.increaseVisitedTimes();
-			addFixedActionInLocation(fixedActions, node, next);
-			res = rollout_min_onthefly_oneSuccessor(next,depth, fixedActions,min);
-		}
-		else
-		{
-			UCTNode succ = node.getSuccessors().get(random.nextInt(node.getSuccessors().size()));
-			succ.increaseVisitedTimes();
-			if( !(oneStates.get(succ.getState()) || zeroStates.get(succ.getState())))
-			{
-				if(depth > 0 && !succ.isInitialized())
-					exploreSearchTreeOnTheFly(succ, min);
-				rollout_min_onthefly_oneSuccessor(succ, depth-1, fixedActions,min);
-			}
-			res = addupSuccessorProbability(node, fixedActions,true);
-		}
-		List<FixedAction> newFixedActions = new ArrayList<FixedAction>(fixedActions);
-		if(node.getRByFixedActions(newFixedActions) < res)
-			node.setRByFixedActions(newFixedActions, res);
-		
-		if(res > node.getR())
-		{
-			if(node.isDecision())
-			{
-				node.setBestSucc(next);
-			}
-			node.setR(res);
-		}
-		return res;
-	}
-	
-	private static void printScheduler(UCTNode node, BitSet oneSet, BitSet zeroSet)
-	{
-		//Only for debuging
-		//Not correct, because it doesn't consider the uniform constraints when printing
-		List<UCTNode> list = new ArrayList<UCTNode>();
-		list.add(node);
-		p("Start to print the best scheduler:");
-		while(!list.isEmpty())
-		{
-			UCTNode curr = list.remove(0);
-			if(curr.isDecision())
-			{
-				if(curr.getBestSucc() != null)
-				{
-					p("state: " + curr.getState() + " choose: " + curr.getBestSucc().getAction() + " to state: " + curr.getBestSucc().getState());
-					list.add(curr.getBestSucc());
-				}
-			}
-			else
-			{
-				for(UCTNode succ : curr.getSuccessors())
-				{
-					p("pro state: " + curr.getState() + " to state: " + succ.getState() + " with pro: " + succ.getProbability() + " (oneState? " + oneSet.get(succ.getState()) + " zeroState? " + zeroSet.get(succ.getState()) + ")");
-					list.add(succ);
-				}
-			}
-		}
-	}
-	
-	private static void p(String str)
-	{
-		System.out.println(str);
-	}
-	private static void p(double str)
-	{
-		System.out.println(str);
-	}
-
-	private static void pf(String str)
-    {
-    	FileWriter out = null;
-		try {
-			out = new FileWriter(new File("//home//fuchen//Desktop//graph"));
-			out.write(str);
-			out.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-    }
-	
-//	private static double firstExploreThenUCT(int state, BitSet oneSet, BitSet zeroSet, boolean min)
-//	{
-//		//depthLimit = unKnown.cardinality();
-//		System.out.println("Depth limit: " + depthLimit);
-//		StopWatch wh = new StopWatch(true);
-//		UCTNode root = exploreSearchTree(state, emptyAction, true, depthLimit, min);
-//		System.out.println("Explore time: " + wh.getTimeSeconds() + " s");
-//		System.out.println("Start to rollout...");
-//		int rolloutTimes = 0;
-//		long elapsed = 0;
-//		StopWatch watch = new StopWatch(true);
-//		if(min)
-//		{
-//			while(watch.getTimeSeconds() < timeLimit)
-//			{
-//				if(watch.getTimeSeconds() - elapsed > printTimeInterval)
-//				{
-//					elapsed = watch.getTimeSeconds();
-//					System.out.println("Remaining time: " + (timeLimit - watch.getTimeSeconds()) + " s");
-//				}
-//				root.increaseVisitedTimes();
-//				rolloutTimes += 1;
-//				rollout_min(root, depthLimit, new ArrayList<FixedAction>());
-//				if(root.getR() == 0.0)
-//					break;
-//			}
-//		}
-//		else
-//		{
-//			while(watch.getTimeSeconds() < timeLimit)
-//			{
-//				if(watch.getTimeSeconds() - elapsed > printTimeInterval)
-//				{
-//					elapsed = watch.getTimeSeconds();
-//					System.out.println("Remaining time: " + (timeLimit - watch.getTimeSeconds()) + " s");
-//				}
-//				root.increaseVisitedTimes();
-//				rolloutTimes += 1;
-//				rollout_max(root, depthLimit, new ArrayList<FixedAction>());
-//				if(root.getR() == 1.0)
-//					break;
-//			}
-//		}
-//		
-//		System.out.println("Times of rollouts: " + rolloutTimes);
-//		printScheduler(root, oneSet, zeroSet);
-//		
-//		return root.getR();
-//	}
-	
-//	private static double rollout_max(UCTNode node, int depth, List<FixedAction> fixedActions)
-//	{
-//		if(depth == 0)
-//			return 0.0;
-//		double res = 0.0;
-//		UCTNode next = null;
-//		if(node.isDecision())
-//		{
-//			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
-//			next = choseUnvisitedSucc(successors);
-//			if(next == null)
-//			{
-//				next = chooseSuccByUCT(node, successors);
-//			}
-//			next.increaseVisitedTimes();
-//			res = rollout_max(next,depth, addFixedAction(fixedActions, node, next));
-//		}
-//		else
-//		{
-//			for(UCTNode succ : node.getSuccessors())
-//			{
-//				succ.increaseVisitedTimes();
-//				double rs = 0.0;
-//				if(oneStates.get(succ.getState()))
-//				{
-//					rs = succ.getProbability();
-//				}
-//				else if(zeroStates.get(succ.getState()))
-//				{
-//					rs = 0.0;
-//				}
-//				else// if(depth > 0)
-//				{
-//					rs = succ.getProbability() * rollout_max(succ, depth-1, fixedActions);
-//				}
-//				res += rs;
-//			}
-//		}
-//		if(res > node.getR())
-//		{
-//			if(node.isDecision())
-//			{
-//				node.setBestSucc(next);
-//			}
-//			node.setR(res);
-//		}
-////		else
-////			res = node.getR();
-//		return res;
-//	}
-//	
-//	private static double rollout_min(UCTNode node, int depth, List<FixedAction> fixedActions)
-//	{
-//		if(depth == 0)
-//			return 1.0;
-//		double res = 0.0;
-//		UCTNode next = null;
-//		if(node.isDecision())
-//		{
-//			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
-//			next = choseUnvisitedSucc(successors);
-//			if(next == null)
-//			{
-//				next = chooseSuccByUCT(node, successors);
-//			}
-//			next.increaseVisitedTimes();
-//			res = rollout_min(next,depth, addFixedAction(fixedActions, node, next));
-//		}
-//		else
-//		{
-//			for(UCTNode succ : node.getSuccessors())
-//			{
-//				succ.increaseVisitedTimes();
-//				double rs = succ.getProbability();
-//				if(oneStates.get(succ.getState()))
-//				{
-//					rs = succ.getProbability();
-//				}
-//				else if(zeroStates.get(succ.getState()))
-//				{
-//					rs = 0.0;
-//				}
-//				else// if(depth > 0)
-//				{
-//					rs = succ.getProbability() * rollout_min(succ, depth-1, fixedActions);
-//				}
-//				res += rs;
-//			}
-//		}
-//		if(res < node.getR())
-//		{
-//			if(node.isDecision())
-//			{
-//				node.setBestSucc(next);
-//			}
-//			node.setR(res);
-//		}
-////		else
-////			res = node.getR();
-//		return res;
-//	}
-	
-//	private static UCTNode exploreSearchTree(int state, String action, boolean isDecision, int depth, boolean min)
-//	{
-//		UCTNode node = new UCTNode(state, action, isDecision);
-//		node.setVisitedTimes(0);
-//		if(min)
-//			node.setR(1.0);
-//		else
-//			node.setR(0.0);
-//		
-//		if(isState.getBoolean(state))
-//		{
-//			//decision node
-//			//for decision nodes, one should not use 'action'
-//			if(depth <= 0)
-//				return node;
-//			for (int iter = 0; iter < graph.getNumSuccessors(state); iter++)
-//    		{
-//    			int succ = graph.getSuccessorNode(state, iter);
-//    			Action ac = actionLabel.getObject(state, iter);
-//                String nextAction = ac.getName();
-//                UCTNode succNode = exploreSearchTree(succ, nextAction, false, depth, min);
-//                node.addSuccessor(succNode);
-//    		}
-//		}
-//		else
-//		{
-//			//chance node
-//			for (int iter = 0; iter < graph.getNumSuccessors(state); iter++)
-//    		{
-//    			int succ = graph.getSuccessorNode(state, iter);
-//    			double pro = ((ValueDouble) probability.get(state, iter)).getDouble();
-//    			UCTNode succNode = exploreSearchTree(succ, emptyAction, true, depth-1, min);
-//    			succNode.setProbability(pro);
-//                node.addSuccessor(succNode);
-//    		}
-//		}
-//		
-//		return node;
-//	}
 }
