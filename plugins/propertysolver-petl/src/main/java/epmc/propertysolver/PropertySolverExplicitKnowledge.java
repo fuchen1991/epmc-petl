@@ -1,23 +1,3 @@
-/****************************************************************************
-
-    ePMC - an extensible probabilistic model checker
-    Copyright (C) 2017
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
- *****************************************************************************/
-
 package epmc.propertysolver;
 
 import java.util.Collection;
@@ -42,7 +22,7 @@ import epmc.modelchecker.EngineExplicit;
 import epmc.modelchecker.ModelChecker;
 import epmc.modelchecker.PropertySolver;
 import epmc.petl.model.ExpressionKnowledge;
-import epmc.prism.model.ModelMAS;
+import epmc.petl.model.ModelMAS;
 import epmc.util.BitSet;
 import epmc.util.UtilBitSet;
 import epmc.value.Type;
@@ -51,18 +31,11 @@ import epmc.value.Value;
 import epmc.value.ValueArray;
 import epmc.value.ValueBoolean;
 
-/**
- * This class implements a propertysolver which uses an explicit graph data structure
- * to check the knowledge properties in a MDP.
- * 
- * @author Chen Fu
- */
-
-
 public class PropertySolverExplicitKnowledge implements PropertySolver {
 	public final static String IDENTIFIER = "petl-explicit-knowledge";
 	private ModelChecker modelChecker;
     private GraphExplicit graph;
+    private StateSetExplicit computeForStates;
     private Expression property;
     private StateSet forStates;
     
@@ -76,9 +49,11 @@ public class PropertySolverExplicitKnowledge implements PropertySolver {
         if (!SemanticsDTMC.isDTMC(semantics) && !SemanticsMDP.isMDP(semantics)) {
             return false;
         }
+        
         if (!(property instanceof ExpressionKnowledge)) {
             return false;
         }
+        
         return true;
 	}
 
@@ -92,7 +67,9 @@ public class PropertySolverExplicitKnowledge implements PropertySolver {
         graph.explore(forStatesExplicit.getStatesExplicit());
         ExpressionKnowledge propertyKnowledge = (ExpressionKnowledge) property;
         Expression quantifier = propertyKnowledge.getQuantifier();
-
+        
+        //System.out.println(graph);
+        
         StateSet allStates = UtilGraph.computeAllStatesExplicit(modelChecker.getLowLevel());
         StateMapExplicit innerResult = (StateMapExplicit) modelChecker.check(quantifier, allStates);
         UtilGraph.registerResult(graph, quantifier, innerResult);
@@ -105,11 +82,16 @@ public class PropertySolverExplicitKnowledge implements PropertySolver {
         BitSet oneStates = UtilBitSet.newBitSetBounded(NodeNum);
         for (int node = 0; node < NodeNum; node ++) {
             evalValues = graph.getNodeProperty(quantifier).get(node);
+//            System.out.println("value  " + evalValues);
+            
             evaluator.setValues(evalValues);
             boolean sat = evaluator.evaluateBoolean();
             if (sat)  
             	oneStates.set(node);
         }
+
+//        System.out.println("all sat " + oneStates);
+//        System.out.println("forState " + forStates);
 
         BitSet res = UtilBitSet.newBitSetBounded(NodeNum);
         BitSet helper = UtilBitSet.newBitSetBounded(NodeNum);
@@ -121,7 +103,8 @@ public class PropertySolverExplicitKnowledge implements PropertySolver {
         		continue;
         	
         	BitSet equiv = UtilPETL.getEquivalenceClass(state, property, modelChecker);
-
+//        	System.out.println("state, equiv: " + state + " " + equiv);
+        	
         	if(UtilPETL.isSubsetOf(equiv, oneStates)) 
         	{
         		for(int i = equiv.nextSetBit(0);i>=0;i=equiv.nextSetBit(i+1))
@@ -132,6 +115,9 @@ public class PropertySolverExplicitKnowledge implements PropertySolver {
         	}
         	helper.and(equiv);
         }
+        
+        
+//        System.out.println("result " + res);
         
         Type type = evaluator.getType();
         ValueArray resultValues = UtilValue.newArray(type.getTypeArray(), forStates.size());

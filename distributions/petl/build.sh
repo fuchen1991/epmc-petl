@@ -9,7 +9,9 @@ prepare_plugin expression-basic
 prepare_plugin graph
 prepare_plugin algorithm
 prepare_plugin graphsolver
+prepare_plugin graphsolver-iterative
 prepare_plugin jani-model
+prepare_plugin jani-interaction
 prepare_plugin automata
 prepare_plugin prism-format
 prepare_plugin command-check

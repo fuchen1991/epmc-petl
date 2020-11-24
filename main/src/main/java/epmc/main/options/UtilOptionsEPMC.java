@@ -45,10 +45,8 @@ import epmc.plugin.UtilPlugin;
 public final class UtilOptionsEPMC {
     /** User-readable string indicating that we want to have filename there. */
     private final static String FILE = "file";
-    /** Default RMI server name. */
-    private final static String DEFAULT_SERVER_NAME = "EPMC";
-    /** Default RMI server port. */
-    private final static String DEFAULT_SERVER_PORT = "43333";
+    /** User-readable string indicating that we want to have property name there. */
+    private final static String NAME = "name";
 
     /**
      * Create new {@link Options} with EPMC-specific options.
@@ -70,23 +68,19 @@ public final class UtilOptionsEPMC {
      */
     public static void prepareOptions(Options options) {
         assert options != null;
-        OptionTypeString typeString = OptionTypeString.getInstance();
-        OptionTypeInteger typeInteger = OptionTypeInteger.getInstance();
         OptionTypeBoolean typeBoolean = OptionTypeBoolean.getInstance();
         OptionTypeStringList typeFileList = new OptionTypeStringList(FILE);
-
         options.addOption().setIdentifier(OptionsEPMC.MODEL_INPUT_FILES)
-        .setType(typeFileList).setCommandLine().build();
+            .setType(typeFileList).setCommandLine().build();
         options.addOption().setIdentifier(OptionsEPMC.PROPERTY_INPUT_FILES)
-        .setType(typeFileList).setCommandLine().build();
-        options.addOption().setIdentifier(OptionsEPMC.PORT)
-        .setType(typeInteger).setDefault(DEFAULT_SERVER_PORT)
-        .setCommandLine().build();
-        options.addOption().setIdentifier(OptionsEPMC.SERVER_NAME)
-        .setType(typeString).setDefault(DEFAULT_SERVER_NAME)
-        .setCommandLine().setGui().build();
+            .setType(typeFileList).setCommandLine().build();
+        OptionTypeStringList typeStringList = new OptionTypeStringList(NAME);
+        options.addOption().setIdentifier(OptionsEPMC.PROPERTY_INPUT_NAMES)
+        .setType(typeStringList).setCommandLine().build();
+        options.addOption().setIdentifier(OptionsEPMC.RESULT_OUTPUT_FILES)
+            .setType(typeFileList).setCommandLine().build();
         options.addOption().setIdentifier(OptionsEPMC.PRINT_STACKTRACE)
-        .setType(typeBoolean).setDefault(false).build();
+            .setType(typeBoolean).setDefault(false).build();
 
         Map<String,Class<?>> commands = new HashMap<>();
         String commandTaskClassString = CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, OptionsEPMC.COMMAND_CLASS.name());

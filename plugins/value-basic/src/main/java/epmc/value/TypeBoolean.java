@@ -22,14 +22,8 @@ package epmc.value;
 
 import epmc.value.ContextValue;
 import epmc.value.Type;
-import epmc.value.TypeArray;
 
-public final class TypeBoolean implements TypeEnumerable, TypeNumBitsKnown {
-    private final static String BOOL = "bool";
-    
-    private final ValueBoolean valueFalse = new ValueBoolean(this, false);
-    private final ValueBoolean valueTrue = new ValueBoolean(this, true);
-
+public interface TypeBoolean extends TypeEnumerable, TypeNumBitsKnown {
     public static boolean is(Type type) {
         return type instanceof TypeBoolean;
     }
@@ -51,65 +45,25 @@ public final class TypeBoolean implements TypeEnumerable, TypeNumBitsKnown {
         ContextValue.get().setType(TypeBoolean.class, ContextValue.get().makeUnique(type));
     }
 
-    public TypeBoolean() {
-        valueFalse.setImmutable();
-        valueTrue.setImmutable();
-    }
+    @Override
+    ValueBoolean newValue();
 
-    public ValueBoolean getFalse() {
-        return valueFalse;
-    }
-
-    public ValueBoolean getTrue() {
-        return valueTrue;
+    default ValueBoolean newValue(boolean i) {
+        ValueBoolean value = newValue();
+        value.set(i);
+        return value;
     }
 
     @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(BOOL);
-        return builder.toString();
-    }
-
-    @Override
-    public ValueBoolean newValue() {
-        return new ValueBoolean(this);
-    }
-
-    public ValueBoolean newValue(boolean i) {
-        ValueBoolean result = newValue();
-        result.set(i);
-        return result;
-    }
-
-    @Override
-    public int getNumBits() {
+    default int getNumBits() {
         return 1;
     }
 
     @Override
-    public int getNumValues() {
+    default int getNumValues() {
         return 2;
     }
 
     @Override
-    public int hashCode() {
-        int hash = 0;
-        hash = getClass().hashCode() + (hash << 6) + (hash << 16) - hash;
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        assert obj != null;
-        if (this.getClass() != obj.getClass()) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public TypeArray getTypeArray() {
-        return ContextValue.get().makeUnique(new TypeArrayBoolean(this));
-    }
+    TypeArrayBoolean getTypeArray();
 }

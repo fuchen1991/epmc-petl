@@ -38,6 +38,7 @@ import epmc.graph.LowLevel;
 import epmc.graph.Scheduler;
 import epmc.graph.StateMap;
 import epmc.graph.StateSet;
+import epmc.main.options.OptionsEPMC;
 import epmc.messages.OptionsMessages;
 import epmc.modelchecker.error.ProblemsModelChecker;
 import epmc.modelchecker.messages.MessagesModelChecker;
@@ -170,12 +171,19 @@ public final class ModelChecker implements Closeable {
     public void check() {
         long time = System.nanoTime();
         getLog().send(MessagesModelChecker.MODEL_CHECKING);
+        boolean hasProperties = false;
         if (model.getPropertyList() != null) {
             for (RawProperty property : model.getPropertyList().getRawProperties()) {
                 String propString;
-                propString = property.getDefinition();
+                propString = property.getName();
+                List<String> propertyNames = Options.get().getStringList(OptionsEPMC.PROPERTY_INPUT_NAMES);
+                // only check specified properties
+                if(propertyNames != null && propertyNames.size() > 0 && !propertyNames.contains(propString)) {
+                	continue;
+                }
+                hasProperties = true;
                 if (propString == null) {
-                    propString = property.getName();
+                    propString = property.getDefinition();
                 }
                 getLog().send(MessagesModelChecker.ANALYSING_PROPERTY, propString);
                 Expression expression = model.getPropertyList().getParsedProperty(property);
@@ -189,6 +197,9 @@ public final class ModelChecker implements Closeable {
             }
         }
         time = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - time);
+        if(! hasProperties) {
+        	System.out.println("No property has been specified");
+        }
         getLog().send(MessagesModelChecker.MODEL_CHECKING_DONE, time);
     }
 
@@ -267,7 +278,6 @@ public final class ModelChecker implements Closeable {
                 return solver.solve();
             }
         }
-       
         fail(ProblemsModelChecker.NO_SOLVER_AVAILABLE, property);
         return null;
     }

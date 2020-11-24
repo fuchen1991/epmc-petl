@@ -36,10 +36,7 @@ public final class TypeInterval implements TypeWeightTransition, TypeWeight {
         }
     }
 
-    private final ValueInterval one;
-    private final ValueInterval zero;
-    private final ValueInterval posInf;
-    private final ValueInterval negInf;
+    private final TypeReal typeReal;
 
     public static TypeInterval get() {
         return ContextValue.get().getType(TypeInterval.class);
@@ -50,13 +47,14 @@ public final class TypeInterval implements TypeWeightTransition, TypeWeight {
         ContextValue.get().setType(TypeInterval.class,
                 ContextValue.get().makeUnique(type));
     }
+    
+    public TypeInterval(TypeReal typeReal) {
+        assert typeReal != null;
+        this.typeReal = typeReal;
+    }
 
     public TypeInterval() {
-        TypeReal typeReal = TypeReal.get();
-        one = new ValueInterval(this, typeReal.getOne(), typeReal.getOne());
-        zero = new ValueInterval(this, typeReal.getZero(), typeReal.getZero());
-        posInf = new ValueInterval(this, typeReal.getPosInf(), typeReal.getPosInf());
-        negInf = new ValueInterval(this, typeReal.getNegInf(), typeReal.getNegInf());
+        this(TypeReal.get());
     }
 
     @Override
@@ -67,14 +65,22 @@ public final class TypeInterval implements TypeWeightTransition, TypeWeight {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("interval");
+        builder.append("interval[");
+        builder.append(typeReal);
+        builder.append("]");
         return builder.toString();
     }
 
     @Override
     public boolean equals(Object obj) {
-        assert obj != null;
+        if (obj == null) {
+            return false;
+        }
         if (this.getClass() != obj.getClass()) {
+            return false;
+        }
+        TypeInterval other = (TypeInterval) obj;
+        if (!this.typeReal.equals(other.typeReal)) {
             return false;
         }
         return true;
@@ -84,35 +90,16 @@ public final class TypeInterval implements TypeWeightTransition, TypeWeight {
     public int hashCode() {
         int hash = 0;
         hash = getClass().hashCode() + (hash << 6) + (hash << 16) - hash;
+        hash = typeReal.hashCode() + (hash << 6) + (hash << 16) - hash;
         return hash;
     }
 
-    @Override
-    public ValueInterval getOne() {
-        return one;
-    }
-
-    @Override
-    public ValueInterval getZero() {
-        return zero;
-    }
-
     public TypeReal getEntryType() {
-        return TypeReal.get();
-    }
-
-    @Override
-    public ValueInterval getPosInf() {
-        return posInf;
+        return typeReal;
     }
 
     @Override
     public TypeArrayInterval getTypeArray() {
         return ContextValue.get().makeUnique(new TypeArrayInterval(this));
-    }
-
-    @Override
-    public ValueAlgebra getNegInf() {
-        return negInf;
     }
 }

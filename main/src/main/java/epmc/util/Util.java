@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
@@ -243,14 +244,29 @@ public final class Util {
      * @param tester predicate to test class instances against.
      * @return class instance from the map fulfilling criterion or {@code null}
      */
-    public static <T> T getInstance(Map<String,Class<T>> map, Predicate<T> tester) {
+    public static <T> T getInstance(Map<String,Class<? extends T>> map, Predicate<T> tester) {
         assert map != null;
         assert tester != null;
-        for (Entry<String, Class<T>> entry : map.entrySet()) {
+        for (Entry<String, Class<? extends T>> entry : map.entrySet()) {
             assert entry.getKey() != null;
             assert entry.getValue() != null;
         }
-        for (Class<T> entry : map.values()) {
+        for (Class<? extends T> entry : map.values()) {
+            T instance = getInstance(entry);
+            if (tester.test(instance)) {
+                return instance;
+            }
+        }
+        return null;
+    }
+
+    public static <T> T getInstance(List<Class<T>> list, Predicate<T> tester) {
+        assert list != null;
+        assert tester != null;
+        for (Class<T> entry : list) {
+            assert entry != null;
+        }
+        for (Class<T> entry : list) {
             T instance = getInstance(entry);
             if (tester.test(instance)) {
                 return instance;

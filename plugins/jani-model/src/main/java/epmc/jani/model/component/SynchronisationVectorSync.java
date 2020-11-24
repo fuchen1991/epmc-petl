@@ -34,6 +34,7 @@ import javax.json.JsonValue.ValueType;
 import epmc.jani.model.Action;
 import epmc.jani.model.JANINode;
 import epmc.jani.model.ModelJANI;
+import epmc.jani.model.UtilModelParser;
 import epmc.util.UtilJSON;
 
 public final class SynchronisationVectorSync implements JANINode {
@@ -66,10 +67,10 @@ public final class SynchronisationVectorSync implements JANINode {
             if (sync.getValueType() == ValueType.NULL) {
                 this.synchronise.add(null);
             } else {
-                this.synchronise.add(UtilJSON.toOneOf(sync, model.getActions()));
+                this.synchronise.add(UtilJSON.toOneOf(sync, model.getActionsOrEmpty()));
             }
         }
-        result = UtilJSON.toOneOfOrNullFailInvalidType(object, RESULT, model.getActions());
+        result = UtilJSON.toOneOfOrNullFailInvalidType(object, RESULT, model.getActionsOrEmpty());
         //AT: from 2016-09-21 the result is optional; if omitted, it is the silent action
         //TODO: check if the silent action has to be added to the model
         if (result == null) {
@@ -120,4 +121,8 @@ public final class SynchronisationVectorSync implements JANINode {
         return comment;
     }
 
+    @Override
+    public String toString() {
+        return UtilModelParser.toString(this);
+    }
 }

@@ -20,22 +20,13 @@
 
 package epmc.main;
 
-import java.text.MessageFormat;
-import java.util.Locale;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
-import epmc.error.EPMCException;
-import epmc.error.Positional;
-import epmc.graph.LowLevel;
-import epmc.graph.Scheduler;
-import epmc.main.options.OptionsEPMC;
-import epmc.main.options.UtilOptionsEPMC;
-import epmc.messages.OptionsMessages;
-import epmc.modelchecker.CommandTask;
-import epmc.modelchecker.RawModel;
-import epmc.modelchecker.RawProperty;
-import epmc.options.Options;
-import epmc.options.UtilOptions;
-import epmc.plugin.OptionsPlugin;
+import epmc.plugin.PluginInterface;
+import epmc.plugin.StartInConsole;
 import epmc.plugin.UtilPlugin;
 import epmc.util.Util;
 
@@ -45,11 +36,6 @@ import epmc.util.Util;
  * @author Ernst Moritz Hahn
  */
 public final class EPMC {
-    /** Empty string. */
-    private final static String EMPTY = "";
-    /** String ": ".*/
-    private final static String SPACE_COLON = ": ";
-
     /**
      * The {@code main} entry point of EPMC.
      * 
@@ -60,167 +46,63 @@ public final class EPMC {
         for (String arg : args) {
             assert arg != null;
         }
-        Options options = UtilOptionsEPMC.newOptions();
-        Options.set(options);
-        try {
-            options = prepareOptions(args);
-            Options.set(options);
-            startInConsole(options);
-        } catch (EPMCException e) {
-            String message = e.getProblem().getMessage(options.getLocale());
-            MessageFormat formatter = new MessageFormat(EMPTY);
-            formatter.applyPattern(message);
-            String formattedMessage = formatter.format(e.getArguments(), new StringBuffer(), null).toString();
-            Positional positional = e.getPositional();
-            if (positional != null) {
-                if (positional.getContent() != null) {
-                    System.err.print(positional.getContent());
-                    if (positional.getPart() != null
-                            || positional.getLine() > 0
-                            || positional.getColumn() > 0) {
-                        System.err.print(", ");
-                    }
-                }
-                if (positional.getPart() != null) {
-                    System.err.print("part: " + positional.getPart());
-                    if (positional.getLine() > 0 || positional.getColumn() > 0) {
-                        System.err.print(", ");
-                    }
-                }
-                if (positional.getLine() > 0) {
-                    System.err.print("line: " + positional.getLine());
-                    if (positional.getColumn() > 0) {
-                        System.err.print(", ");
-                    }                    
-                }
-                if (positional.getColumn() > 0) {
-                    System.err.print("column: " + positional.getColumn());
-                }
-                if (positional.getContent() != null
-                        || positional.getPart() != null
-                        || positional.getLine() > 0
-                        || positional.getColumn() > 0) {
-                    System.err.print(": ");
-                }
-            }
-            System.err.println(formattedMessage);
-            if (options == null || options.getBoolean(OptionsEPMC.PRINT_STACKTRACE)) {
-                e.printStackTrace();
-            }
-            System.exit(1);
+        List<Class<? extends PluginInterface>> plugins = getPlugins(args);
+        for (Class<? extends StartInConsole> clazz : UtilPlugin.getPluginInterfaceClasses(plugins, StartInConsole.class)) {
+            StartInConsole object = Util.getInstance(clazz);
+            object.process(args, plugins);
         }
     }
-
-    /**
-     * Prepare options from command line arguments.
-     * The command line arguments parameters must not be {@code null} and must
-     * not contain {@code null} entries.
-     * 
-     * @param args command line arguments
-     * @return options parsed from command line arguments
-     */
-    private static Options prepareOptions(String[] args) {
+    
+    private static List<Class<? extends PluginInterface>> getPlugins(String[] args) {
+        return UtilPlugin.loadPlugins(getPluginList(args));
+    }
+    
+    private static List<String> getPluginList(String[] args) {
         assert args != null;
         for (String arg : args) {
             assert arg != null;
         }
-        Locale locale = Locale.getDefault();
-        Options options = UtilOptionsEPMC.newOptions();
-        options.parseOptions(args, true);
-        options.reset();
-        UtilPlugin.loadPlugins(options);
-        options.getOption(OptionsPlugin.PLUGIN).reset();
-        options.getOption(OptionsPlugin.PLUGIN_LIST_FILE).reset();
-        options.parseOptions(args, false);
-        options.set(OptionsEPMC.LOCALE, locale);
-        return options;
-    }
-
-    /**
-     * Start the command to be executed with output shown in standard output.
-     * The command to be executed will be read for {@link Options#COMMAND}.
-     * Then, the client part of the command will be executed.
-     * Afterwards, a task server will be created and the server part of the
-     * command will be executed there.
-     * The options parameter must not be {@code null}.
-     * 
-     * @param options options to use
-     */
-    private static void startInConsole(Options options) {
-        assert options != null;
-        if (options.getString(Options.COMMAND) == null) {
-            System.out.println(options.getShortUsage());
-            System.exit(1);
+        List<String> result = new ArrayList<>();
+        String plugins = null;
+        String pluginsListFilename = null;
+        int index = 0;
+        while (index < args.length) {
+            if (args[index].trim().equals("--plugin")) {
+                index++;
+                while (index < args.length && !args[index].startsWith("--")) {
+                    if (plugins == null) {
+                        plugins = args[index].trim();
+                    } else {
+                        plugins += "," + args[index].trim();
+                    }
+                    index++;
+                }
+            } else if (args[index].equals("--plugin-list-file")) {
+                index++;
+                while (index < args.length && !args[index].startsWith("--")) {
+                    pluginsListFilename = args[index];
+                    index++;
+                }
+            }
+            index++;
         }
-        CommandTask command = UtilOptions.getInstance(options,
-                OptionsEPMC.COMMAND_CLASS,
-                Options.COMMAND);
-        assert command != null;
-        LogCommandLine log = new LogCommandLine(options);
-        options.set(OptionsMessages.LOG, log);
-        command.executeOnClient();
-        if (command.isRunOnServer()) {
-            execute(options, log);
+        /* Read external plugins from plugin files list. */
+        if (pluginsListFilename != null) {
+            Path pluginsListPath = Paths.get(pluginsListFilename);
+            List<String> pluginsFromListFile = UtilPlugin.readPluginList(pluginsListPath);
+            result.addAll(pluginsFromListFile);
         }
-    }
 
-    /**
-     * Execute task on a new task server and print results.
-     * The options parameter must not be {@code null}.
-     * 
-     * @param options options to use
-     * @param log
-     */
-    private static void execute(Options options, LogCommandLine log) {
-        assert options != null;
-        RawModel model = new RawModelLocalFiles(
-                options.getStringList(OptionsEPMC.MODEL_INPUT_FILES).toArray(new String[0]),
-                options.getStringList(OptionsEPMC.PROPERTY_INPUT_FILES).toArray(new String[0]));
-        Analyse.execute(model, options, log);
-        if (log.getException() != null) {
-            throw log.getException();
+        /* Read plugins from option (command line).  */
+        if (plugins == null) {
+            plugins = "";
         }
-        printResults(options, log);
-    }
-
-    /**
-     * Print model checking result to command line.
-     * The options and result parameters must not be {@code null}.
-     * 
-     * @param options options to use
-     * @param log log used
-     */
-    private static void printResults(Options options, LogCommandLine log) {
-        assert options != null;
-        assert log != null;
-        for (RawProperty property : log.getProperties()) {
-            String exprString = property.getDefinition();
-            Object propResult = log.get(property);
-            if (propResult == null) {
+        for (String plugin : plugins.split(",")) {
+            if (plugin.equals("")) {
                 continue;
             }
-            String resultString = null;
-            if (propResult instanceof EPMCException) {
-                EPMCException e = (EPMCException) propResult;
-                String message = e.getProblem().getMessage(options.getLocale());
-                MessageFormat formatter = new MessageFormat(message);
-                formatter.applyPattern(message);
-                resultString = formatter.format(e.getArguments());
-                if (options == null || options.getBoolean(OptionsEPMC.PRINT_STACKTRACE)) {
-                    e.printStackTrace();
-                }
-            } else {
-                resultString = propResult.toString();
-            }
-            System.out.println(exprString + SPACE_COLON + resultString);
-            Scheduler scheduler = log.getScheduler(property);
-            LowLevel lowLevel = log.getLowLevel(property);
-            if (scheduler != null) {
-                Util.printScheduler(System.out, lowLevel, scheduler);
-            }
+            result.add(plugin);
         }
-        if (log.getCommonResult() != null) {
-            System.out.println(log.getCommonResult().toString());
-        }
+        return result;
     }
 }

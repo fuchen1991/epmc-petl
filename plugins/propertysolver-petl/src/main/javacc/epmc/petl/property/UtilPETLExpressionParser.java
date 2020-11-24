@@ -1,7 +1,5 @@
 package epmc.petl.property;
 
-import java.util.List;
-
 import epmc.error.Positional;
 import epmc.expression.Expression;
 import epmc.expression.standard.ExpressionLiteral;
@@ -139,73 +137,6 @@ public class UtilPETLExpressionParser {
                 .build();
     }
 
-    static ExpressionTemporalNext newTemporalNext(Expression operand,
-            TimeBound timeBound, InfoExpression info) {
-        assert operand != null;
-        assert timeBound != null;
-        Positional positional = info != null ? info.toPositional() : null;
-        return new ExpressionTemporalNext.Builder()
-                .setOperand(operand)
-                .setTimeBound(timeBound)
-                .setPositional(positional)
-                .build();
-    }
-
-    static ExpressionTemporalFinally newTemporalFinally(Expression operand,
-            TimeBound timeBound, InfoExpression info) {
-        assert operand != null;
-        assert timeBound != null;
-        Positional positional = info != null ? info.toPositional() : null;
-        return new ExpressionTemporalFinally.Builder()
-                .setOperand(operand)
-                .setTimeBound(timeBound)
-                .setPositional(positional)
-                .build();
-    }
-
-    static ExpressionTemporalGlobally newTemporalGlobally(Expression operand,
-            TimeBound timeBound, InfoExpression info) {
-        assert operand != null;
-        assert timeBound != null;
-        Positional positional = info != null ? info.toPositional() : null;
-        return new ExpressionTemporalGlobally.Builder()
-                .setOperand(operand)
-                .setTimeBound(timeBound)
-                .setPositional(positional)
-                .build();
-    }
-
-    static ExpressionTemporalRelease newTemporalRelease(Expression operandLeft,
-            Expression operandRight,
-            TimeBound timeBound,
-            InfoExpression info) {
-        assert operandLeft != null;
-        assert operandRight != null;
-        assert timeBound != null;
-        Positional positional = info != null ? info.toPositional() : null;
-        return new ExpressionTemporalRelease.Builder()
-                .setOperandLeft(operandLeft)
-                .setOperandRight(operandRight)
-                .setTimeBound(timeBound)
-                .setPositional(positional)
-                .build();
-    }
-
-    static ExpressionTemporalUntil newTemporalUntil(Expression operandLeft,
-            Expression operandRight,
-            TimeBound timeBound,
-            InfoExpression info) {
-        assert operandLeft != null;
-        assert operandRight != null;
-        assert timeBound != null;
-        Positional positional = info != null ? info.toPositional() : null;
-        return new ExpressionTemporalUntil.Builder()
-                .setOperandLeft(operandLeft)
-                .setOperandRight(operandRight)
-                .setTimeBound(timeBound)
-                .setPositional(positional)
-                .build();
-    }
 
     static ExpressionReward newRewardInstantaneous
     (Expression structure, Expression time) {
@@ -246,6 +177,73 @@ public class UtilPETLExpressionParser {
                 .build();
     }
 
+    static ExpressionTemporalRelease newTemporalRelease(Expression operandLeft,
+            Expression operandRight,
+            TimeBound timeBound,
+            InfoExpression info) {
+        assert operandLeft != null;
+        assert operandRight != null;
+        assert timeBound != null;
+        Positional positional = info != null ? info.toPositional() : null;
+        return new ExpressionTemporalRelease.Builder()
+                .setOperandLeft(operandLeft)
+                .setOperandRight(operandRight)
+                .setTimeBound(timeBound)
+                .setPositional(positional)
+                .build();
+    }
+    
+    static ExpressionTemporalUntil newTemporalUntil(Expression operandLeft,
+            Expression operandRight,
+            TimeBound timeBound,
+            InfoExpression info) {
+        assert operandLeft != null;
+        assert operandRight != null;
+        assert timeBound != null;
+        Positional positional = info != null ? info.toPositional() : null;
+        return new ExpressionTemporalUntil.Builder()
+                .setOperandLeft(operandLeft)
+                .setOperandRight(operandRight)
+                .setTimeBound(timeBound)
+                .setPositional(positional)
+                .build();
+    }
+    static ExpressionTemporalNext newTemporalNext(Expression operand,
+            TimeBound timeBound, InfoExpression info) {
+        assert operand != null;
+        assert timeBound != null;
+        Positional positional = info != null ? info.toPositional() : null;
+        return new ExpressionTemporalNext.Builder()
+                .setOperand(operand)
+                .setTimeBound(timeBound)
+                .setPositional(positional)
+                .build();
+    }
+
+    static ExpressionTemporalFinally newTemporalFinally(Expression operand,
+            TimeBound timeBound, InfoExpression info) {
+        assert operand != null;
+        assert timeBound != null;
+        Positional positional = info != null ? info.toPositional() : null;
+        return new ExpressionTemporalFinally.Builder()
+                .setOperand(operand)
+                .setTimeBound(timeBound)
+                .setPositional(positional)
+                .build();
+    }
+
+    static ExpressionTemporalGlobally newTemporalGlobally(Expression operand,
+            TimeBound timeBound, InfoExpression info) {
+        assert operand != null;
+        assert timeBound != null;
+        Positional positional = info != null ? info.toPositional() : null;
+        return new ExpressionTemporalGlobally.Builder()
+                .setOperand(operand)
+                .setTimeBound(timeBound)
+                .setPositional(positional)
+                .build();
+    }
+    
     static Positional newPositional(long line, long column) {
         assert line >= 0;
         assert column >= 0;

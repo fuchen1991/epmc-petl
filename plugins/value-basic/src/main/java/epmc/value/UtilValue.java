@@ -27,6 +27,8 @@ import epmc.value.Value;
 import epmc.value.ValueArray;
 
 public final class UtilValue {
+    public final static String POS_INF = "Infinity";
+    public final static String NEG_INF = "-Infinity";
     private final static String LBRACK = "[";
     private final static String RBRACK = "]";
     private final static String COMMA = ",";
@@ -64,6 +66,13 @@ public final class UtilValue {
         return value;
     }
 
+    public static ValueBoolean newValue(TypeBoolean typeBoolean, boolean b) {
+        assert typeBoolean != null;
+        ValueBoolean result = typeBoolean.newValue();
+        result.set(b);
+        return result;
+    }
+
     public static <T extends ValueArray, U extends TypeArray> T newArray(U type, int size) {
         assert type != null;
         assert size >= 0;
@@ -84,7 +93,7 @@ public final class UtilValue {
                     TypeInteger.as(b).getLowerInt());
             int upperBound = Math.max(TypeInteger.as(a).getUpperInt(),
                     TypeInteger.as(b).getUpperInt());
-            upper = (T) new TypeInteger(lowerBound, upperBound);
+            upper = (T) new TypeIntegerJava(lowerBound, upperBound);
         } else {
             OperatorEvaluator setAB = ContextValue.get().getEvaluatorOrNull(OperatorSet.SET, b, a);
             OperatorEvaluator setBA = ContextValue.get().getEvaluatorOrNull(OperatorSet.SET, a, b);

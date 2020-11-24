@@ -23,8 +23,11 @@ package epmc.value.plugin;
 import epmc.plugin.BeforeModelCreation;
 import epmc.value.ContextValue;
 import epmc.value.TypeBoolean;
+import epmc.value.TypeBooleanJava;
 import epmc.value.TypeDouble;
+import epmc.value.TypeDoubleJava;
 import epmc.value.TypeInteger;
+import epmc.value.TypeIntegerJava;
 import epmc.value.TypeInterval;
 import epmc.value.TypeReal;
 import epmc.value.TypeWeight;
@@ -72,6 +75,7 @@ import epmc.value.operatorevaluator.OperatorEvaluatorIteDouble;
 import epmc.value.operatorevaluator.OperatorEvaluatorIteInt;
 import epmc.value.operatorevaluator.OperatorEvaluatorLeDouble;
 import epmc.value.operatorevaluator.OperatorEvaluatorLeInt;
+import epmc.value.operatorevaluator.OperatorEvaluatorLnDouble;
 import epmc.value.operatorevaluator.OperatorEvaluatorLogDouble;
 import epmc.value.operatorevaluator.OperatorEvaluatorLtDouble;
 import epmc.value.operatorevaluator.OperatorEvaluatorLtInt;
@@ -151,6 +155,7 @@ public final class BeforeModelCreationValueStandard implements BeforeModelCreati
         SimpleEvaluatorFactory.get().add(OperatorEvaluatorIteDouble.Builder.class);
         SimpleEvaluatorFactory.get().add(OperatorEvaluatorLeDouble.Builder.class);
         SimpleEvaluatorFactory.get().add(OperatorEvaluatorLeInt.Builder.class);
+        SimpleEvaluatorFactory.get().add(OperatorEvaluatorLnDouble.Builder.class);
         SimpleEvaluatorFactory.get().add(OperatorEvaluatorLogDouble.Builder.class);
         SimpleEvaluatorFactory.get().add(OperatorEvaluatorLtDouble.Builder.class);
         SimpleEvaluatorFactory.get().add(OperatorEvaluatorLtInt.Builder.class);
@@ -200,13 +205,13 @@ public final class BeforeModelCreationValueStandard implements BeforeModelCreati
     }
 
     private static void addTypes() {
-        TypeDouble typeDouble = new TypeDouble(null, null);
-        TypeWeight.set(new TypeDouble(null, null));
-        TypeWeightTransition.set(new TypeDouble(null, null));
+        TypeDouble typeDouble = new TypeDoubleJava(null, null);
+        TypeWeight.set(new TypeDoubleJava(null, null));
+        TypeWeightTransition.set(new TypeDoubleJava(null, null));
         TypeReal.set(typeDouble);
         TypeInterval.set(new TypeInterval());
-        TypeBoolean.set(new TypeBoolean());
-        TypeInteger.set(new TypeInteger());
+        TypeBoolean.set(new TypeBooleanJava());
+        TypeInteger.set(new TypeIntegerJava());
         TypeDouble.set(typeDouble);
     }
 }

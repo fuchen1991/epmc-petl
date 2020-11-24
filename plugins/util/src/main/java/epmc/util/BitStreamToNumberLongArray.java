@@ -20,12 +20,11 @@
 
 package epmc.util;
 
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.custom_hash.TObjectIntCustomHashMap;
-import gnu.trove.strategy.HashingStrategy;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import it.unimi.dsi.fastutil.Hash;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
 
 final class BitStreamToNumberLongArray implements BitStoreableToNumber {
     private final class ReadWriteHelper implements BitStream {
@@ -74,25 +73,21 @@ final class BitStreamToNumberLongArray implements BitStoreableToNumber {
         index = 0;
     }
 
-    private final static class LongArrayStrategy implements HashingStrategy<long[]> {
-        private static final long serialVersionUID = 1L;
-
+    private final static class LongArrayStrategy implements Hash.Strategy<long[]> {
         @Override
-        public int computeHashCode(long[] arg) {
+        public int hashCode(long[] arg) {
             assert arg != null;
             return Arrays.hashCode(arg);
         }
 
         @Override
         public boolean equals(long[] arg0, long[] arg1) {
-            assert arg0 != null;
-            assert arg1 != null;
             return Arrays.equals(arg0, arg1);
         }
     }
 
     private long[] testLongArray;
-    private TObjectIntMap<long[]> nodeToNumber = new TObjectIntCustomHashMap<>(new LongArrayStrategy(), 10, 0.5f, -1);
+    private Object2IntOpenCustomHashMap<long[]> nodeToNumber = new Object2IntOpenCustomHashMap<>(new LongArrayStrategy());
 
     private ArrayList<long[]> numberToNode = new ArrayList<>();
     private int size;
@@ -121,6 +116,7 @@ final class BitStreamToNumberLongArray implements BitStoreableToNumber {
         assert numBits >=0;
         this.size = numBits / Long.SIZE + (numBits % Long.SIZE > 0 ? 1 : 0);
         testLongArray = new long[size];
+        nodeToNumber.defaultReturnValue(-1);
     }
 
     @Override

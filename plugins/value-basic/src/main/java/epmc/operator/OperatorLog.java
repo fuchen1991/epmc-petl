@@ -22,6 +22,11 @@ package epmc.operator;
 
 import epmc.operator.Operator;
 
+/**
+ * Operator of first argument with base of second argument
+ * 
+ * @author Ernst Moritz Hahn
+ */
 public enum OperatorLog implements Operator {
     LOG
 }

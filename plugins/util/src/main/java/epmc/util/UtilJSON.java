@@ -56,6 +56,7 @@ import javax.json.stream.JsonParser.Event;
 
 import epmc.error.EPMCException;
 import epmc.error.Positional;
+import epmc.error.Problem;
 
 // TODO documentation
 // TODO reorder methods according to category (e.g. ensure, checked conversion)
@@ -74,6 +75,8 @@ public final class UtilJSON {
 
     /** String with arbitrary content. */
     private final static String ARBITRARY = "arbitrary";
+    /** String with empty content. */
+    private final static String EMPTY = "";
     /** Textual representation of boolean value &quot;true&quot;. */
     private final static String TRUE = "true";
     /** Textual representation of boolean value &quot;false&quot;. */
@@ -84,6 +87,7 @@ public final class UtilJSON {
     private final static JsonValue TRUE_VALUE;
     /** JSON representation of boolean value &quot;false&quot;. */
     private final static JsonValue FALSE_VALUE;
+    
     static {
         JsonObjectBuilder trueValue = Json.createObjectBuilder();
         trueValue.add(ARBITRARY, true);
@@ -253,7 +257,17 @@ public final class UtilJSON {
         for (String choice : compositions) {
             assert choice != null;
         }
-        ensure(compositions.contains(composition), ProblemsJSON.JSON_VALUE_ONE_OF, compositions);
+        ensureOneOf(composition, compositions, ProblemsJSON.JSON_VALUE_ONE_OF);
+    }
+
+    public static void ensureOneOf(String composition, Set<String> compositions, Problem problem) {
+        assert composition != null;
+        assert compositions != null;
+        for (String choice : compositions) {
+            assert choice != null;
+        }
+        ensure(compositions.contains(composition),
+                problem, composition, compositions);
     }
 
     public static void ensureIdentifier(String identifier) {
@@ -375,7 +389,7 @@ public final class UtilJSON {
         return result;
     }
 
-    public static <V> V toOneOf(JsonValue value, Map<String,V> map) {
+    public static <V> V toOneOf(JsonValue value, Map<String,V> map, Problem problem) {
         assert value != null;
         assert map != null;
         for (Entry<String, ?> entry : map.entrySet()) {
@@ -383,8 +397,18 @@ public final class UtilJSON {
             assert entry.getValue() != null;
         }
         UtilJSON.ensureString(value);
-        UtilJSON.ensureOneOf(((JsonString) value).getString(), map.keySet());
+        UtilJSON.ensureOneOf(((JsonString) value).getString(), map.keySet(), problem);
         return map.get(((JsonString) value).getString());
+    }
+
+    public static <V> V toOneOf(JsonValue value, Map<String,V> map) {
+        assert value != null;
+        assert map != null;
+        for (Entry<String, ?> entry : map.entrySet()) {
+            assert entry.getKey() != null;
+            assert entry.getValue() != null;
+        }
+        return toOneOf(value, map, ProblemsJSON.JSON_VALUE_ONE_OF);
     }
 
     public static <V> Set<V> toSubsetOf(JsonValue value, Map<String,V> map) {
@@ -555,6 +579,14 @@ public final class UtilJSON {
         }
     }
 
+    public static JsonArray getArrayObjectOrEmpty(JsonObject object, String key) {
+        try {
+            return getArrayObject(object, key);
+        } catch (EPMCException e) {
+            return Json.createArrayBuilder().build();
+        }
+    }
+
     public static JsonArray getArrayString(JsonObject object, String key) {
         assert object != null;
         assert key != null;
@@ -639,6 +671,17 @@ public final class UtilJSON {
         }
     }
 
+    public static String getStringOrEmpty(JsonObject object, String name) {
+        assert object != null;
+        assert name != null;
+        try {
+            return getString(object, name);
+        } catch (EPMCException e) {
+            return EMPTY;
+        }
+    }
+
+    
     public static int getInteger(JsonObject object, String name) {
         assert object != null;
         assert name != null;

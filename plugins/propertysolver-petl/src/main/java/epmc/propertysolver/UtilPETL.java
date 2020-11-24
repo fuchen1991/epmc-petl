@@ -1,33 +1,16 @@
-/****************************************************************************
-
-    ePMC - an extensible probabilistic model checker
-    Copyright (C) 2017
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
- *****************************************************************************/
-
 package epmc.propertysolver;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import epmc.expression.Expression;
+import epmc.expression.standard.ExpressionIdentifier;
 import epmc.expression.standard.ExpressionOperator;
 import epmc.expression.standard.ExpressionPropositional;
 import epmc.expression.standard.ExpressionQuantifier;
@@ -36,47 +19,57 @@ import epmc.expression.standard.ExpressionTemporalGlobally;
 import epmc.expression.standard.ExpressionTemporalNext;
 import epmc.expression.standard.ExpressionTemporalRelease;
 import epmc.expression.standard.ExpressionTemporalUntil;
+import epmc.graph.CommonProperties;
+import epmc.graph.explicit.GraphExplicit;
+import epmc.graph.explicit.NodeProperty;
 import epmc.modelchecker.ModelChecker;
 import epmc.petl.model.EquivalenceClasses;
 import epmc.petl.model.ExpressionKnowledge;
 import epmc.petl.model.KnowledgeType;
 import epmc.prism.model.PropertyPRISM;
 import epmc.util.BitSet;
-
-/**
- * Utility class for PETL model checking
- * 
- * @author Chen Fu
- */
+import epmc.util.UtilBitSet;
 
 public class UtilPETL {
 	private static EquivalenceClasses equivalenceClasses;
 	
-	public static Set<Expression> collectPETLInner(Expression expression) {
-		if (ExpressionTemporalNext.is(expression)) {
+	public static Set<Expression> collectPETLInner(Expression expression) {        
+        if (ExpressionTemporalNext.is(expression)) {
             ExpressionTemporalNext expressionTemporal = ExpressionTemporalNext.as(expression);
-            return collectPCTLInner(expressionTemporal.getOperand());
+            return collectPETLInner(expressionTemporal.getOperand());
         } else if (ExpressionTemporalFinally.is(expression)) {
             ExpressionTemporalFinally expressionTemporal = ExpressionTemporalFinally.as(expression);
-            return collectPCTLInner(expressionTemporal.getOperand());
+            return collectPETLInner(expressionTemporal.getOperand());
         } else if (ExpressionTemporalGlobally.is(expression)) {
             ExpressionTemporalGlobally expressionTemporal = ExpressionTemporalGlobally.as(expression);
-            return collectPCTLInner(expressionTemporal.getOperand());
+            return collectPETLInner(expressionTemporal.getOperand());
         } else if (ExpressionTemporalRelease.is(expression)) {
             ExpressionTemporalRelease expressionTemporal = ExpressionTemporalRelease.as(expression);
             Set<Expression> result = new LinkedHashSet<>();
-            result.addAll(collectPCTLInner(expressionTemporal.getOperandLeft()));
-            result.addAll(collectPCTLInner(expressionTemporal.getOperandRight()));
+            result.addAll(collectPETLInner(expressionTemporal.getOperandLeft()));
+            result.addAll(collectPETLInner(expressionTemporal.getOperandRight()));
             return result;
         } else if (ExpressionTemporalUntil.is(expression)) {
             ExpressionTemporalUntil expressionTemporal = ExpressionTemporalUntil.as(expression);
             Set<Expression> result = new LinkedHashSet<>();
-            result.addAll(collectPCTLInner(expressionTemporal.getOperandLeft()));
-            result.addAll(collectPCTLInner(expressionTemporal.getOperandRight()));
+            result.addAll(collectPETLInner(expressionTemporal.getOperandLeft()));
+            result.addAll(collectPETLInner(expressionTemporal.getOperandRight()));
             return result;
         } else {
+            return Collections.singleton(expression);			
+        }
+    }
+	
+	public static Set<Expression> collectIdentifiers(Expression expression) {
+        assert expression != null;
+        if (expression instanceof ExpressionIdentifier) {
             return Collections.singleton(expression);
         }
+        Set<Expression> result = new HashSet<>();
+        for (Expression child : expression.getChildren()) {
+            result.addAll(collectIdentifiers(child));
+        }
+        return result;
     }
 	
 	public static List<BitSet> getAllClassesOfPlayer(String player, ModelChecker modelChecker)
@@ -92,7 +85,7 @@ public class UtilPETL {
 	public static BitSet getClassFor(String player, int state)
 	{
 		assert equivalenceClasses != null;
-		
+
 		return equivalenceClasses.getClassFor(player,state);
 	}
 	
@@ -238,31 +231,30 @@ public class UtilPETL {
 	}
 	
 	public static Set<Expression> collectPCTLInner(Expression expression) {
-		Set<Expression> result = new LinkedHashSet<>();
 		if (ExpressionTemporalNext.is(expression)) {
-            ExpressionTemporalNext next = ExpressionTemporalNext.as(expression);
-            result.addAll(collectPCTLInner(next.getOperand()));
-            return result;
+            ExpressionTemporalNext expressionTemporal = ExpressionTemporalNext.as(expression);
+            return collectPCTLInner(expressionTemporal.getOperand());
         } else if (ExpressionTemporalFinally.is(expression)) {
-            ExpressionTemporalFinally expFinally = ExpressionTemporalFinally.as(expression);
-            result.addAll(collectPCTLInner(expFinally.getOperand()));
-            return result;
+            ExpressionTemporalFinally expressionTemporal = ExpressionTemporalFinally.as(expression);
+            return collectPCTLInner(expressionTemporal.getOperand());
         } else if (ExpressionTemporalGlobally.is(expression)) {
-            ExpressionTemporalGlobally expGlobally = ExpressionTemporalGlobally.as(expression);
-            result.addAll(collectPCTLInner(expGlobally.getOperand()));
-            return result;
+            ExpressionTemporalGlobally expressionTemporal = ExpressionTemporalGlobally.as(expression);
+            return collectPCTLInner(expressionTemporal.getOperand());
         } else if (ExpressionTemporalRelease.is(expression)) {
-            ExpressionTemporalRelease expRelease = ExpressionTemporalRelease.as(expression);
-            result.addAll(collectPCTLInner(expRelease.getOperandLeft()));
-            result.addAll(collectPCTLInner(expRelease.getOperandRight()));
+            ExpressionTemporalRelease expressionTemporal = ExpressionTemporalRelease.as(expression);
+            Set<Expression> result = new LinkedHashSet<>();
+            result.addAll(collectPCTLInner(expressionTemporal.getOperandLeft()));
+            result.addAll(collectPCTLInner(expressionTemporal.getOperandRight()));
             return result;
         } else if (ExpressionTemporalUntil.is(expression)) {
-            ExpressionTemporalUntil expRelease = ExpressionTemporalUntil.as(expression);
-            result.addAll(collectPCTLInner(expRelease.getOperandLeft()));
-            result.addAll(collectPCTLInner(expRelease.getOperandRight()));
+            ExpressionTemporalUntil expressionTemporal = ExpressionTemporalUntil.as(expression);
+            Set<Expression> result = new LinkedHashSet<>();
+            result.addAll(collectPCTLInner(expressionTemporal.getOperandLeft()));
+            result.addAll(collectPCTLInner(expressionTemporal.getOperandRight()));
             return result;
         } else if (expression instanceof ExpressionKnowledge) {
         	ExpressionKnowledge expressionKnowledge = (ExpressionKnowledge) expression;
+            Set<Expression> result = new LinkedHashSet<>();
             for (Expression inner : expressionKnowledge.getChildren()) {
                 result.addAll(collectPCTLInner(inner));
             }
@@ -291,9 +283,93 @@ public class UtilPETL {
         return false;
     }
 	
+	static BitSet getUnKnownStates(BitSet oneSet, BitSet zeroSet, GraphExplicit graph)
+	{
+		BitSet unKnown = UtilBitSet.newBitSetUnbounded();
+		int nodeNum = graph.getNumNodes();
+		
+		NodeProperty stateProp = graph.getNodeProperty(CommonProperties.STATE);
+        for(int i=0;i<nodeNum;i++)
+        {
+        	if (!stateProp.getBoolean(i) || oneSet.get(i) || zeroSet.get(i)) {
+                continue;
+            }
+        	unKnown.set(i);
+        }
+        
+        //unKnown states should be able to reach some oneState, otherwise they are zeroState
+        BitSet canReach = UtilBitSet.newBitSetUnbounded();
+        for(int i=unKnown.nextSetBit(0);i>=0 && i<nodeNum;i=unKnown.nextSetBit(i+1))
+        {
+        	Stack<Integer> stack = new Stack<Integer>();
+        	stack.push(i);
+        	BitSet visited = UtilBitSet.newBitSetUnbounded();
+        	visited.set(i);
+        	boolean canReachOneState =false;
+        	while(!stack.isEmpty())
+        	{
+        		int state = stack.pop();
+        		int numSucc = graph.getNumSuccessors(state);
+        		boolean found_outer = false;
+        		for (int succNr = 0; succNr < numSucc; succNr++)
+        		{
+        			int succ = graph.getSuccessorNode(state, succNr);
+        			assert !stateProp.getBoolean(succ);
+                    
+                    int num_Succ = graph.getNumSuccessors(succ);
+                    boolean found_inner = false;
+                    for(int nr=0;nr<num_Succ;nr++)
+                    {
+                    	int succState = graph.getSuccessorNode(succ, nr);
+                    	if(oneSet.get(succState))
+                    	{
+                    		canReach.set(i);
+                    		found_inner = true;
+                    		break;
+                    	}
+                    	else if(canReach.get(succState))
+                    	{
+                    		found_inner = true;
+                    		break;
+                    	}
+                    	else
+                    	{
+                    		if(!visited.get(succState))
+                    		{
+                    			visited.set(succState);
+                    			if(!zeroSet.get(succState))
+                    				stack.push(succState);
+                    		}
+                    	}
+                    }
+                    if(found_inner)
+                    {
+                    	found_outer = true;
+                    	break;
+                    }
+        		}
+        		if(found_outer)
+        		{
+        			canReachOneState = true;
+        			break;
+        		}
+        	}
+        	if(!canReachOneState)
+        	{
+        		for(int k= visited.nextSetBit(0);k>=0 && k<nodeNum;k=visited.nextSetBit(k+1))
+            	{
+            		zeroSet.set(k);
+            		unKnown.clear(k);
+            	}
+        	}
+        }
+        return unKnown;
+	}
+	
 	public static Expression parseExpression(String exp)
 	{
+		//System.out.println(exp.length());
 		InputStream stream = new ByteArrayInputStream(exp.getBytes());
-        return new PropertyPRISM().parseExpression(exp, stream);
+        return new PropertyPRISM().parseExpression(exp.toString(), stream);
 	}
 }

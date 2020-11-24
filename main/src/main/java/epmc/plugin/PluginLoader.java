@@ -48,7 +48,6 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import epmc.options.Options;
 import epmc.util.Util;
 
 // TODO continue documentation
@@ -58,7 +57,7 @@ import epmc.util.Util;
  * 
  * @author Ernst Moritz Hahn
  */
-final class PluginLoader {
+public final class PluginLoader {
     /* Be careful when changing anything in this class. It is very easy to break
      * its functionality without even noticing it. In particular, if you
      * perform any changes, please check whether the class still works on other
@@ -121,26 +120,44 @@ final class PluginLoader {
     private final static String CLASS_FILE_ENDING = ".class";
     /** String containing a single space. */
     private final static String SPACE = " ";
-
+    /** String describing names of plugin class list. */
+    private final static String CLASSES_TXT = "classes.txt";
+    /** Empty String. */
+    private final static String EMPTY = "";
+    private final static String SLASH = "/";
+    
+    private static PluginLoader pluginLoader;
+    
     /** Class loader constructed by this plugin loader. */
     private final ClassLoader classLoader;
     /** List of all plugins loaded. */
     private final List<Plugin> plugins = new ArrayList<>();
     /** List of all plugin classes loaded. */
     private final List<Class<? extends PluginInterface>> classes = new ArrayList<>();
-    /** Options used. */
-    private final Options options;
+    private final boolean checkSanity;
+    private List<Path> allPluginPaths;
 
-    PluginLoader(Options options, List<String> pluginPathStrings)
-    {
-        assert options != null;
+    PluginLoader(List<String> pluginPathStrings) {
+        this(pluginPathStrings, true);
+    }
+    
+    static void set(PluginLoader pluginLoader) {
+        PluginLoader.pluginLoader = pluginLoader;
+    }
+
+    public static PluginLoader get() {
+        return pluginLoader;
+    }
+    
+    private PluginLoader(List<String> pluginPathStrings, boolean checkSanity) {
         assert pluginPathStrings != null;
         for (String name : pluginPathStrings) {
             assert name != null;
         }
-        this.options = options;
+        this.checkSanity = checkSanity;
         List<Path> pluginFiles = stringsToPaths(pluginPathStrings);
         List<Path> allPluginPaths = buildAllPluginPaths(pluginFiles);
+        this.allPluginPaths = allPluginPaths;
         this.classLoader = buildClassLoader(allPluginPaths);
         this.plugins.addAll(loadPlugins(this.classLoader, allPluginPaths));
         this.classes.addAll(extractClasses(this.plugins));        
@@ -155,18 +172,23 @@ final class PluginLoader {
         for (int pluginNr = 0; pluginNr < pluginPaths.size(); pluginNr++) {
             Path pluginPath = pluginPaths.get(pluginNr);
             try {
-		String urlString = pluginPath.toUri().toURL().toString();
-		/* since Java 9 or 10, separator at end might get lost :-| */
-		if (!urlString.endsWith(SEPARATOR)) {
-		    urlString = urlString + SEPARATOR;
+                String urlString = pluginPath.toUri().toURL().toString();
+		if (urlString.endsWith(".jar")) {
+		    urlString = urlString.replace("file:/", "jar:file:///");
+		    urlString += "!/";
 		}
+                /* since Java 9 or 10, separator at end might get lost :-| */
+                if (!urlString.endsWith(SEPARATOR)) {
+                    urlString = urlString + SEPARATOR;
+                }
                 urls[pluginNr] = new URL(urlString);
             } catch (MalformedURLException e) {
                 // should not happen, because the URL is automatically generated
                 throw new RuntimeException(e);
             }
         }
-        return new URLClassLoader(urls);
+        /* not using default class loader important when running from Maven */
+        return new URLClassLoader(urls, getClass().getClassLoader());
     }
 
     private List<Path> buildAllPluginPaths(List<Path> pluginFiles) {
@@ -205,7 +227,7 @@ final class PluginLoader {
         }
         List<Path> result = new ArrayList<>();
         for (int pluginNr = 0; pluginNr < plugins.size(); pluginNr++) {
-            String fileName = plugins.get(pluginNr);
+            String fileName = plugins.get(pluginNr).trim();
             Path path = Paths.get(fileName);
             ensure(path != null, ProblemsPlugin.PLUGIN_PLUGIN_FILE_NOT_FOUND, fileName);
             ensure(Files.exists(path), ProblemsPlugin.PLUGIN_PLUGIN_FILE_NOT_FOUND, fileName);
@@ -228,25 +250,88 @@ final class PluginLoader {
         assert plugin != null;
         Path directory = plugin.getPath();
         boolean isJar = directory.toString().endsWith(JAR_ENDING);
-        readClassFileNames(directory, isJar, plugin, directory);
+        List<String> classNames = tryReadClassNames(isJar, directory);
+        if (classNames != null) {
+            readClassesFromList(plugin, classNames);
+        } else {
+            readClassesRecursively(directory, isJar, plugin, directory);
+        }
     }
 
-    private void readClassFileNames(Path path, boolean isJAR, Plugin plugin, Path directory)
-    {
+    private void readClassesFromList(Plugin plugin, List<String> classNames) {
+        for (String className : classNames) {
+            className = className.trim();
+            if (className.equals(EMPTY)) {
+                continue;
+            }
+            Class<?> clazz = null;
+            try {
+                clazz = classLoader.loadClass(className);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (NoClassDefFoundError e) {
+                throw new RuntimeException(e);
+            }
+            processClassUnchecked(plugin, clazz);
+        }
+    }
+    
+    @SuppressWarnings(UNCHECKED)
+    private void processClassUnchecked(Plugin plugin, Class<?> clazz) {
+        assert plugin != null;
+        assert clazz != null;
+        plugin.add((Class<PluginInterface>) clazz);
+    }
+
+
+    private List<String> tryReadClassNames(boolean isJAR, Path directory) {
+        if (isJAR) {
+            return tryReadClassNamesJAR(directory);
+        }
+        try {
+            return Files.readAllLines(directory.resolve(CLASSES_TXT));
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private List<String> tryReadClassNamesJAR(Path directory) {
+        List<String> result = null;
+        try (FileSystem fs = FileSystems.newFileSystem(directory)) {
+            for (Path root : fs.getRootDirectories()) {
+                if (result == null) {
+                    result = tryReadClassNames(false, root);
+                } else {
+                    List<String> nextResult = tryReadClassNames(false, root);
+                    if (nextResult != null) {
+                        List<String> newResult = new ArrayList<>();
+                        newResult.addAll(result);
+                        newResult.addAll(nextResult);
+                    }
+                }
+            }
+            return result;
+        } catch (IOException e) {
+            fail(ProblemsPlugin.PLUGIN_JAR_FILESYSTEM_FAILED, e, directory);
+        }
+        return result;
+    }
+    
+    private void readClassesRecursively(Path path, boolean isJAR, Plugin plugin, Path directory) {
         assert path != null;
         assert plugin != null;
         assert directory != null;
 
         if (Files.isRegularFile(path) && path.toString().endsWith(CLASS_FILE_ENDING)) {
-            readClassFileNamesClass(path, isJAR, plugin, directory);
+            readClassesClass(path, isJAR, plugin, directory);
         } else if (Files.isRegularFile(path) && path.toString().endsWith(JAR_ENDING)) {
-            readClassFileNamesJAR(path, isJAR, plugin, directory);
+            readClassesJAR(path, isJAR, plugin, directory);
         } else if (Files.isDirectory(path)) {
-            readClassFileNamesDirectory(path, isJAR, plugin, directory);
+            readClassesDirectory(path, isJAR, plugin, directory);
         }
     }
 
-    private void readClassFileNamesClass(Path path, boolean isJAR, Plugin plugin,
+    private void readClassesClass(Path path, boolean isJAR, Plugin plugin,
             Path directory) {
         assert path != null;
         assert plugin != null;
@@ -273,22 +358,22 @@ final class PluginLoader {
         }
     }
 
-    private void readClassFileNamesJAR(Path path, boolean isJAR, Plugin plugin,
+    private void readClassesJAR(Path path, boolean isJAR, Plugin plugin,
             Path directory) {
-        try (FileSystem fs = FileSystems.newFileSystem(path, null)) {
+        try (FileSystem fs = FileSystems.newFileSystem(path)) {
             for (Path root : fs.getRootDirectories()) {
-                readClassFileNames(root, isJAR, plugin, directory);
+                readClassesRecursively(root, isJAR, plugin, directory);
             }
         } catch (IOException e) {
             fail(ProblemsPlugin.PLUGIN_JAR_FILESYSTEM_FAILED, e, path);
         }
     }
 
-    private void readClassFileNamesDirectory(Path path, boolean isJAR,
+    private void readClassesDirectory(Path path, boolean isJAR,
             Plugin plugin, Path directory) {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path sub : stream) {
-                readClassFileNames(sub, isJAR, plugin, directory);
+                readClassesRecursively(sub, isJAR, plugin, directory);
             }
         } catch (IOException e) {
             fail(ProblemsPlugin.PLUGIN_READ_DIRECTORY_FAILED, e, path);
@@ -371,8 +456,7 @@ final class PluginLoader {
         return true;
     }
 
-    private List<Plugin> loadPlugins(ClassLoader classLoader, List<Path> pluginPaths)
-    {
+    private List<Plugin> loadPlugins(ClassLoader classLoader, List<Path> pluginPaths) {
         assert classLoader != null;
         assert pluginPaths != null;
         for (Path path : pluginPaths) {
@@ -385,7 +469,6 @@ final class PluginLoader {
          * its parent class loader if it does not find a certain resource).
          */
         Thread.currentThread().setContextClassLoader(this.classLoader);
-        assert this.options != null;
         for (Path path : pluginPaths) {
             Plugin plugin = new Plugin();
             plugin.setPath(path);
@@ -417,6 +500,9 @@ final class PluginLoader {
      * @param plugins list of plugins to be checked
      */
     private void checkPluginSanity(List<Plugin> plugins) {
+        if (!checkSanity) {
+            return;
+        }
         assert plugins != null;
         for (Plugin plugin : plugins) {
             assert plugin != null;
@@ -561,5 +647,28 @@ final class PluginLoader {
         }
         return builder.toString();
     }
-
+    
+    public static void main(String[] args) throws IOException {
+        if (args.length != 1) {
+            throw new RuntimeException();
+        }
+        String base = args[0];
+        Path out = Paths.get(base + SLASH + CLASSES_TXT);
+        if (Files.exists(out)) {
+            Files.delete(out);
+        }
+        List<String> pluginList = new ArrayList<>();
+        pluginList.add(base);
+        PluginLoader loader = new PluginLoader(pluginList, false);
+        List<Class<? extends PluginInterface>> classes = loader.getPluginInterfaceClasses();
+        List<String> result = new ArrayList<>();
+        for (Class<? extends PluginInterface> clazz : classes) {
+            result.add(clazz.getName());
+        }
+        Files.write(out, result);
+    }
+    
+    public List<Path> getAllPluginPaths() {
+        return allPluginPaths;
+    }
 }

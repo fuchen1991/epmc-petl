@@ -20,6 +20,7 @@
 
 package epmc.automaton;
 
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import epmc.automaton.hoa.HoaParser;
 import epmc.error.Positional;
 import epmc.expression.Expression;
 import epmc.expression.standard.ExpressionIdentifier;
@@ -41,6 +43,7 @@ import epmc.expression.standard.ExpressionTemporalRelease;
 import epmc.expression.standard.ExpressionTemporalUntil;
 import epmc.expression.standard.TimeBound;
 import epmc.expression.standard.evaluatorexplicit.UtilEvaluatorExplicit;
+import epmc.graph.explicit.GraphExplicit;
 import epmc.messages.Message;
 import epmc.messages.OptionsMessages;
 import epmc.modelchecker.Log;
@@ -139,14 +142,18 @@ public final class UtilAutomaton {
         return buechi;
     }
 
-    public static Buechi computeBuechi(Expression property, Expression[] expressions)
-    {
+    public static GraphExplicit newBuechi(String property, List<String> spotParameters) {
+        assert property != null;
+        return BuechiImpl.createSpotAutomaton(property, spotParameters, null);
+    }
+    
+    public static Buechi computeBuechi(Expression property, Expression[] expressions) {
         assert property != null;
         assert expressions != null;
         for (Expression expression : expressions) {
             assert expression != null;
         }
-        ValueBoolean negate = UtilValue.clone(TypeBoolean.get().getFalse());
+        ValueBoolean negate = UtilValue.newValue(TypeBoolean.get(), false);
         return newBuechi(property, expressions, true, negate);
     }
 
@@ -206,7 +213,7 @@ public final class UtilAutomaton {
         }
     }
 
-    static Set<Expression> collectLTLInner(Expression expression) {
+    public static Set<Expression> collectLTLInner(Expression expression) {
         if (ExpressionPropositional.is(expression)) {
             return Collections.singleton(expression);
         } else if (ExpressionTemporalFinally.is(expression)) {
@@ -265,6 +272,13 @@ public final class UtilAutomaton {
         return result.build();
     }
 
+    public static AutomatonExporter getExporter(Automaton automaton,
+            AutomatonExporterFormat format) {
+        Map<String,Class<? extends AutomatonExporter>> automata = Options.get().get(OptionsAutomaton.AUTOMATON_EXPORTER_CLASS);
+        return Util.getInstance(automata, exporter -> 
+            exporter.setAutomaton(automaton).setFormat(format).canHandle());
+    }
+    
     public static AutomatonRabin newAutomatonRabinSafra(Buechi buechi, BitSet automatonState) {
         Map<String,Class<Automaton.Builder>> automata = Options.get().get(OptionsAutomaton.AUTOMATON_CLASS);
         AutomatonSafra.Builder result = (AutomatonSafra.Builder)
@@ -473,6 +487,11 @@ public final class UtilAutomaton {
                 .equals(OperatorNot.NOT);
     }
 
+    public static GraphExplicit parseHOAAutomaton(Reader reader, Map<String, Expression> ap2expr) {
+        HoaParser spotParser = new HoaParser(reader);
+        return spotParser.parseAutomaton(ap2expr);
+    }
+    
     /**
      * Private constructor to prevent instantiation of this class.
      */

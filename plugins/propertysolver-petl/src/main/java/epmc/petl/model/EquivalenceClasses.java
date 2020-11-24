@@ -1,23 +1,3 @@
-/****************************************************************************
-
-    ePMC - an extensible probabilistic model checker
-    Copyright (C) 2017
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
- *****************************************************************************/
-
 package epmc.petl.model;
 
 import java.util.ArrayList;
@@ -27,8 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import epmc.expression.Expression;
-import epmc.expression.standard.evaluatorexplicit.EvaluatorExplicitBoolean;
-import epmc.expression.standard.evaluatorexplicit.UtilEvaluatorExplicit;
 import epmc.graph.CommonProperties;
 import epmc.graph.StateSet;
 import epmc.graph.UtilGraph;
@@ -38,14 +16,8 @@ import epmc.graph.explicit.StateMapExplicit;
 import epmc.modelchecker.ModelChecker;
 import epmc.util.BitSet;
 import epmc.util.UtilBitSet;
-import epmc.value.Value;
-import epmc.prism.model.ModelMAS;
-
-/**
- * Equivalence classes of the agents
- * 
- * @author Chen Fu
- */
+import epmc.value.TypeBoolean;
+import epmc.value.ValueBoolean;
 
 public class EquivalenceClasses {
 	private Map<String, Map<Integer, BitSet>> equivalenceClassesMap;
@@ -64,7 +36,7 @@ public class EquivalenceClasses {
 		for(Entry<String, List<Expression>> entry : rel.entrySet())
 		{
 			String player = entry.getKey();
-			boolean[] helper = new boolean[graph.getNumNodes()];
+			boolean[] hasBeenTaken = new boolean[graph.getNumNodes()];
 			Map<Integer, BitSet> player_class = new HashMap<Integer, BitSet>();
 			List<BitSet> list = new ArrayList<BitSet>();
 			for(Expression exp : entry.getValue())
@@ -74,26 +46,27 @@ public class EquivalenceClasses {
 		        UtilGraph.registerResult(graph, exp, innerResult);
 		        allStates.close();
 		        
-		        EvaluatorExplicitBoolean evaluator = UtilEvaluatorExplicit.newEvaluatorBoolean(exp, graph, exp);
-		        Value evalValues;
+		        //EvaluatorExplicitBoolean evaluator = UtilEvaluatorExplicit.newEvaluatorBoolean(exp, graph, UtilPETL.collectIdentifiers(exp).toArray(new Expression[0]));
+		        //Value evalValues;
 		        BitSet oneStates = UtilBitSet.newBitSetBounded(graph.getNumNodes());
-		        for (int node = 0; node < graph.getNumNodes(); node ++) {
-		        	if(helper[node])
+		        NodeProperty isState = graph.getNodeProperty(CommonProperties.STATE);
+		        for (int i = 0; i < innerResult.size(); i++) {
+		            int state = innerResult.getExplicitIthState(i);
+		            if(hasBeenTaken[state])
 		        		continue;
-		        	NodeProperty isState = graph.getNodeProperty(CommonProperties.STATE);
-		        	if(!isState.getBoolean(node))
-		        	{
-		        		helper[node] = true;
-		        		continue;
-		        	}
-		        	
-		            evalValues = graph.getNodeProperty(exp).get(node);
-		            evaluator.setValues(evalValues);
-		            boolean sat = evaluator.evaluateBoolean();
-		            if (sat)
+		            
+		            if (!isState.getBoolean(state)) {
+		            	hasBeenTaken[state] = true;
+		                continue;
+		            }
+		            
+		            ValueBoolean value = TypeBoolean.get().newValue();
+		            innerResult.getExplicitIthValue(value, i);
+		            boolean satisfyExp = value.getBoolean();
+		            if(satisfyExp)
 		            {
-		            	helper[node] = true;
-		            	oneStates.set(node);
+		            	hasBeenTaken[state] = true;
+		            	oneStates.set(state);
 		            }
 		        }
 		        
@@ -106,9 +79,9 @@ public class EquivalenceClasses {
 		        }
 		        list.add(oneStates);
 			}
-			for(int i=0;i<helper.length;i++)
+			for(int i=0;i<hasBeenTaken.length;i++)
 			{
-				if(!helper[i])
+				if(!hasBeenTaken[i])
 				{
 					BitSet singleton = UtilBitSet.newBitSetBounded(i+1);
 					singleton.set(i);
@@ -135,12 +108,21 @@ public class EquivalenceClasses {
 		return new ArrayList<BitSet>();
 	}
 	
+	public boolean isEquivalent(String player, int state1, int state2)
+	{
+		BitSet set = equivalenceClassesMap.get(player).get(state1);
+		return set.get(state2);
+	}
+	
 	public BitSet getClassFor(String player, int state)
 	{
 		BitSet res = equivalenceClassesMap.get(player).get(state).clone();
 		
 		assert res != null;
-
+//		if(res != null)
+//			return res;
+//		res = UtilBitSet.newBitSetBounded(state+1);
+//		res.set(state);
 		return res;
 	}
 }

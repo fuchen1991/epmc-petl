@@ -38,14 +38,15 @@ final class PropertyNodeExpression implements ExplorerNodeProperty {
         assert expression != null;
         expression = UtilExpressionStandard.replace(expression, explorer.getModel().getConstants());
         this.evaluator = UtilEvaluatorExplicit.newEvaluator(expression, explorer, identifiers);
+        if (type == null) {
+            type = evaluator.getType();
+        }
         this.type = type;
         this.values = new Value[identifiers.length];
     }
 
     @Override
     public Value get() {
-        evaluator.setValues(values);
-        evaluator.evaluate();
         return evaluator.getResultValue();
     }
 
@@ -53,6 +54,8 @@ final class PropertyNodeExpression implements ExplorerNodeProperty {
         for (int valueNr = 0; valueNr < values.length; valueNr++) {
             this.values[valueNr] = values[valueNr];
         }
+        evaluator.setValues(values);
+        evaluator.evaluate();
     }
 
     @Override

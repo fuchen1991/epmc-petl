@@ -1700,6 +1700,7 @@ private Expression parseTemporalBinary(boolean parseExp)  :
 	InfoExpression info = new InfoExpression(string);
 }
 {
+    { beginExpression(info); }
 	p = parseTemporalUnary(parseExp)
 	{ expressions.add(p); }
 	(
@@ -1727,6 +1728,7 @@ private Expression parseTemporalBinary(boolean parseExp)  :
 //		<RPAR>
 		{ expressions.add(p); }
 	)?
+	{ endExpression(info); }
 	{
 		if (expressions.size() == 1) {
 			return p;

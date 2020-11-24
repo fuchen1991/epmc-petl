@@ -98,4 +98,16 @@ public final class Action implements JANINode {
         return UtilModelParser.toString(this);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj instanceof Action) {
+            return name.equals(((Action)obj).getName());
+        }
+        return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
 }

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import epmc.expression.evaluatorexplicit.EvaluatorCache;
 import epmc.expression.Expression;
 import epmc.expression.standard.ExpressionIdentifier;
 import epmc.expression.standard.ExpressionIdentifierStandard;
@@ -58,7 +59,6 @@ import epmc.modelchecker.Log;
 import epmc.modelchecker.Model;
 import epmc.options.Options;
 import epmc.util.Util;
-import epmc.value.EvaluatorCache;
 import epmc.value.Type;
 import epmc.value.TypeBoolean;
 import epmc.value.TypeObject;
@@ -147,7 +147,8 @@ public final class ExplorerJANI implements Explorer {
     /** Whether to allow and automatically fix deadlocks. */
     private boolean isDeadlock;
     private final boolean fixDeadlocks;
-    private final Map<Expression,PropertyNodeExpression> expressionProperties = new LinkedHashMap<>();
+    private final Map<Expression,PropertyNodeExpression> expressionNodeProperties = new LinkedHashMap<>();
+    private final Map<Expression,PropertyEdgeExpression> expressionEdgeProperties = new LinkedHashMap<>();
     private final Map<Expression,PropertyNodeConstant> constantProperies = new LinkedHashMap<>();
     /** Extensions used by this explorer. */
     private final ExplorerExtension[] extensions;
@@ -158,13 +159,14 @@ public final class ExplorerJANI implements Explorer {
     /** TransientValues variables used. */
     private int[] transientValuesVariables;
     /** Whether this model is nondeterministic. */
-    private boolean nonDet;
+    private final boolean nonDet;
     /** Node which was queried last. */
     private NodeJANI queriedNode;
     /** Initial nodes property. */
     private final PropertyNodeInitialNodes initNodesProp;
     private final PropertyNodeDeadlock deadlockNodesProp;
     private final PropertyNodeState stateProp;
+    private final EvaluatorCache evaluatorCache = new EvaluatorCache();
 
     private boolean state;
 
@@ -192,17 +194,20 @@ public final class ExplorerJANI implements Explorer {
         assert edgeProperties != null;
         // TODO check validity of node properties already here
         getLog().send(MessagesJANIExplorer.START_BUILDING_EXPLORER);
+        ensureNoUndefinedConstants(model);
+        
         this.model = model;
         semantics = new TypeObject.Builder()
                 .setClazz(Semantics.class)
                 .build().newValue(model.getSemantics());
-        this.nonDet = SemanticsNonDet.isNonDet(model.getSemantics());
+        nonDet = SemanticsNonDet.isNonDet(model.getSemantics());
         prepareGlobalVariables(model);
         buildTransientValues(nodeProperties, edgeProperties);
         system = prepareSystem(model);
+        extensions = prepareExtensions(model);
+        afterSystemCreation();
         initialNodes = computeInitialNodes();
         fixDeadlocks = Options.get().getBoolean(OptionsJANIModel.JANI_FIX_DEADLOCKS);
-        extensions = prepareExtensions(model);
         prepareGraphProperties();
         prepareNodeProperties();
         prepareEdgeProperties();
@@ -211,6 +216,23 @@ public final class ExplorerJANI implements Explorer {
         stateProp = new PropertyNodeState(this);
         this.state = true;
         getLog().send(MessagesJANIExplorer.DONE_BUILDING_EXPLORER);
+    }
+
+    private static void ensureNoUndefinedConstants(ModelJANI model) {
+        String undefinedConstantsString = model.findUndefinedConstants().toString();
+        if (model.containsUndefinedConstants()) {
+            undefinedConstantsString = undefinedConstantsString.substring(1, undefinedConstantsString.length() - 1);
+        }
+        ensure(!model.containsUndefinedConstants(),
+                ProblemsJANIExplorer.JANI_EXPLORER_UNDEFINED_CONSTANTS,
+                undefinedConstantsString);
+        
+    }
+
+    private void afterSystemCreation() {
+        for (ExplorerExtension extension : extensions) {
+            extension.afterSystemCreation();
+        }
     }
 
     private void prepareGraphProperties() {
@@ -244,7 +266,7 @@ public final class ExplorerJANI implements Explorer {
         }
         for (Variable variable : model.getGlobalVariablesOrEmpty()) {
             boolean store = !variable.isTransient();
-            stateVariables.add(new StateVariable.Builder().setIdentifier(variable.getIdentifier()).setType(variable.getType().toType()).setPermanent(store).setInitialValue(variable.getInitialValueOrNull()).build());
+            stateVariables.add(new StateVariable.Builder().setIdentifier(variable.getIdentifier()).setType(variable.getType().toType()).setPermanent(store).setInitialValue(model.replaceConstantsOrNull(variable.getInitialValueOrNull())).build());
         }
     }
 
@@ -307,7 +329,6 @@ public final class ExplorerJANI implements Explorer {
                 usedTransientValues.add(specification.getExpression());
             }
         }
-
         transientValuesVariables = new int[usedTransientValues.size()];
         int trvNr = 0;
         for (Variable transientValue : model.getGlobalVariablesTransient()) {
@@ -353,7 +374,7 @@ public final class ExplorerJANI implements Explorer {
         List<Map<Variable, Value>> enumerated = enumerator.enumerate();
         Collection<NodeJANI> innerNodes = system.getInitialNodes();
         Collection<NodeJANI> result = new ArrayList<>();
-        EvaluatorCache evaluatorCache = new EvaluatorCache();
+        epmc.value.EvaluatorCache evaluatorCache = new epmc.value.EvaluatorCache();
         for (NodeJANI innerNode : innerNodes) {
             NodeJANI node = newNode();
             node.set(innerNode);
@@ -385,9 +406,6 @@ public final class ExplorerJANI implements Explorer {
         this.queriedNode = nodeJANI;
         nodeJANI.unmark();
         isDeadlock = system.getNumSuccessors() == 0;
-        for (PropertyNodeExpression prop : this.expressionProperties.values()) {
-            prop.setVariableValues(nodeJANI.getValues());
-        }
         if (nonDet && nodeJANI.getBoolean(selfLoopVariable)) {
             system.setNumSuccessors(1);
             system.getSuccessorNode(0).setVariable(selfLoopVariable, false);
@@ -401,12 +419,20 @@ public final class ExplorerJANI implements Explorer {
                 extension.beforeQuerySystem(nodeJANI);
             }
             system.queryNode(nodeJANI);
+            for (PropertyNodeExpression prop : expressionNodeProperties.values()) {
+                prop.setVariableValues(nodeJANI.getValues());
+            }
             for (ExplorerExtension extension : extensions) {
                 extension.afterQuerySystem(nodeJANI);
             }
             int innerNumSuccessors = system.getNumSuccessors();
             ensure(fixDeadlocks || innerNumSuccessors > 0, ProblemsJANIExplorer.JANI_EXPLORER_DEADLOCK);
             state = nonDet ? system.isState() : true;
+            for (int succNr = 0; succNr < innerNumSuccessors; succNr++) {
+                for (PropertyEdgeExpression prop : expressionEdgeProperties.values()) {
+                    prop.setVariableValues(system.getSuccessorNode(succNr).getValues(), succNr);
+                }
+            }
         }
         if (fixDeadlocks && system.getNumSuccessors() == 0 && nonDet) {
             system.setNumSuccessors(1);
@@ -423,14 +449,6 @@ public final class ExplorerJANI implements Explorer {
             successor.set(nodeJANI);
             successor.unmark();
         }
-        /*
-		System.out.println("AAAAA");
-		System.out.println(queriedNode);
-		System.out.println("BBBBB");
-		for (int succ = 0; succ < getNumSuccessors(); succ++) {
-			System.out.println(getSuccessorNode(succ).toStringValuesOnly());
-		}
-         */
     }
 
     public boolean isFixDeadlocks() {
@@ -500,17 +518,24 @@ public final class ExplorerJANI implements Explorer {
                         UtilExpressionStandard.niceForm((Expression) property));
                 return getConstantExpressionNodeProperty((Expression) property);
             }
-            PropertyNodeExpression result = expressionProperties.get(property);
+            PropertyNodeExpression result = expressionNodeProperties.get(property);
             if (result == null) {
                 Type type = stateVariables.get((Expression) property).getType();
                 result = new PropertyNodeExpression(this, stateVariables.getIdentifiersArray(), (Expression) property, type);
-                expressionProperties.put((Expression) property, result);
+                expressionNodeProperties.put((Expression) property, result);
             }
             return result;
         }
         if (property instanceof RewardSpecification) {
             RewardSpecification specification = (RewardSpecification) property;
-            return nodeTransientValuesMap.get(specification.getExpression());
+            ExplorerNodeProperty result = nodeTransientValuesMap.get(specification.getExpression());
+            if (result != null) {
+                return result;
+            } else {
+                result = new PropertyNodeExpression(this, stateVariables.getIdentifiersArray(), specification.getExpression(), null);
+                expressionNodeProperties.put(specification.getExpression(), (PropertyNodeExpression) result);
+                return result;
+            }
         }
         return null;
     }
@@ -540,8 +565,16 @@ public final class ExplorerJANI implements Explorer {
             }
         }
         if (property instanceof RewardSpecification) {
+            // TODO fix for rewards not directly specified with transient vars
             RewardSpecification specification = (RewardSpecification) property;
-            return transitionTransientValuesMap.get(specification.getExpression());
+            ExplorerEdgeProperty result = transitionTransientValuesMap.get(specification.getExpression());
+            if (result != null) {
+                return result;
+            } else {
+                result = new PropertyEdgeExpression(this, stateVariables.getIdentifiersArray(), specification.getExpression(), null);
+                expressionEdgeProperties.put(specification.getExpression(), (PropertyEdgeExpression) result);
+                return result;
+            }
         }
         if (property == CommonProperties.TRANSITION_LABEL) {
             return system.getEdgeProperty(property);
@@ -596,5 +629,9 @@ public final class ExplorerJANI implements Explorer {
 
     @Override
     public void close() {
+    }
+    
+    public EvaluatorCache getEvaluatorCache() {
+        return evaluatorCache;
     }
 }

@@ -46,16 +46,6 @@ public interface TypeWeight extends TypeAlgebra {
         }
     }
 
-    ValueAlgebra getPosInf();
-
-    ValueAlgebra getNegInf();
-
-    @Override
-    ValueAlgebra getZero();
-
-    @Override
-    ValueAlgebra getOne();
-
     @Override
     ValueAlgebra newValue();
 }

@@ -20,14 +20,11 @@
 
 package epmc.graph.explicit;
 
-import epmc.graph.CommonProperties;
 import epmc.util.BitSet;
 import epmc.util.UtilBitSet;
 import epmc.value.Type;
 import epmc.value.TypeArray;
-import epmc.value.TypeBoolean;
 import epmc.value.TypeInteger;
-import epmc.value.TypeWeight;
 import epmc.value.UtilValue;
 import epmc.value.Value;
 import epmc.value.ValueArray;
@@ -123,8 +120,8 @@ public final class GraphExplicitSparse implements GraphExplicit {
         bounds = UtilValue.newArray(typeArrayInteger, numNodes + 1);
         successors = UtilValue.newArray(typeArrayInteger, numTotalOut);
 
-        addSettableEdgeProperty(CommonProperties.WEIGHT, TypeWeight.get());
-        addNodePropertyConstant(CommonProperties.STATE, TypeBoolean.get().getTrue());
+//        addSettableEdgeProperty(CommonProperties.WEIGHT, TypeWeight.get());
+//        addNodePropertyConstant(CommonProperties.STATE, UtilValue.newValue(TypeBoolean.get(), true));
     }
 
     public NodeProperty addNodePropertyConstant(Object name, Value constant) {

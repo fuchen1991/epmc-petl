@@ -95,7 +95,6 @@ public class EvaluatorExplicitVariable implements EvaluatorExplicit, EvaluatorEx
     private final int index;
     private final Value result;
     private final OperatorEvaluator set;
-    private boolean needsEvaluation = true;
     private Value[] values;
 
     private EvaluatorExplicitVariable(Builder builder) {
@@ -113,6 +112,7 @@ public class EvaluatorExplicitVariable implements EvaluatorExplicit, EvaluatorEx
             }
         }
         this.index = index;
+        assert builder.getExpressionToType().getType(variables[index]) != null : variables[index] + " " +  builder.getExpressionToType();
         result = builder.getExpressionToType().getType(variables[index]).newValue();
         set = ContextValue.get().getEvaluator(OperatorSet.SET, builder.getExpressionToType().getType(variables[index]), builder.getExpressionToType().getType(variables[index]));
     }
@@ -130,7 +130,6 @@ public class EvaluatorExplicitVariable implements EvaluatorExplicit, EvaluatorEx
     @Override
     public void setValues(Value... values) {
         this.values = values;
-        needsEvaluation = true;
     }
     
     @Override

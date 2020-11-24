@@ -55,6 +55,12 @@ public final class Variables implements JANINode, Iterable<Variable>, Map<String
     /** Model to which these variables belong to. */
     private ModelJANI model;
 
+    private Map<String, ? extends JANIIdentifier> identifiers;
+
+    public void setIdentifiers(Map<String, ? extends JANIIdentifier> identifiers) {
+        this.identifiers = identifiers;
+    }
+
     void setAutomaton(Automaton automaton) {
         assert this.automaton == null;
         assert automaton != null;
@@ -84,6 +90,7 @@ public final class Variables implements JANINode, Iterable<Variable>, Map<String
             Variable variable = new Variable();
             variable.setAutomaton(automaton);
             variable.setModel(model);
+            variable.setIdentifiers(identifiers);
             variable.parse(var);
             variables.put(variable.getName(), variable);
         }

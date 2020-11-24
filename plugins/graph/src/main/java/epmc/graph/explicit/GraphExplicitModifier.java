@@ -25,18 +25,20 @@ import epmc.graph.Player;
 import epmc.operator.OperatorAdd;
 import epmc.operator.OperatorDivide;
 import epmc.operator.OperatorMax;
+import epmc.operator.OperatorMultiply;
 import epmc.operator.OperatorSet;
 import epmc.operator.OperatorSubtract;
 import epmc.value.ContextValue;
 import epmc.value.OperatorEvaluator;
 import epmc.value.TypeWeight;
+import epmc.value.UtilValue;
 import epmc.value.Value;
 import epmc.value.ValueAlgebra;
 
 public final class GraphExplicitModifier {    
     public static void embed(GraphExplicit graph) {
         assert graph != null;
-        ValueAlgebra zero = TypeWeight.get().getZero();
+        ValueAlgebra zero = UtilValue.newValue(TypeWeight.get(), 0);
         ValueAlgebra sum = newValueWeight();
         ValueAlgebra weight = newValueWeight();
         NodeProperty playerProp = graph.getNodeProperty(CommonProperties.PLAYER);
@@ -61,13 +63,21 @@ public final class GraphExplicitModifier {
     }
 
     public static void uniformise(GraphExplicit graph, Value uniRate) {
+        uniformise(graph, uniRate, null);
+    }
+    
+    public static void uniformise(GraphExplicit graph, Value uniRate, Value factor) {
         assert graph != null;
         Value uniformisationRate = computeUniformisationRate(graph);
+        if (factor != null) {
+            OperatorEvaluator multFct = ContextValue.get().getEvaluator(OperatorMultiply.MULTIPLY, uniformisationRate.getType(), factor.getType());
+            multFct.apply(uniformisationRate, uniformisationRate, factor);
+        }
         if (uniRate != null) {
             OperatorEvaluator set = ContextValue.get().getEvaluator(OperatorSet.SET, uniformisationRate.getType(), uniRate.getType());
             set.apply(uniRate, uniformisationRate);
         }
-        ValueAlgebra zero = TypeWeight.get().getZero();
+        ValueAlgebra zero = UtilValue.newValue(TypeWeight.get(), 0);
         ValueAlgebra sum = newValueWeight();
         OperatorEvaluator divide = ContextValue.get().getEvaluator(OperatorDivide.DIVIDE, TypeWeight.get(), TypeWeight.get());
         ValueAlgebra weight = newValueWeight();

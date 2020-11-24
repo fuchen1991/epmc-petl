@@ -35,10 +35,6 @@ public interface TypeAlgebra extends Type {
         }
     }
 
-    ValueAlgebra getZero();
-
-    ValueAlgebra getOne();
-
     @Override
     TypeArrayAlgebra getTypeArray();
 

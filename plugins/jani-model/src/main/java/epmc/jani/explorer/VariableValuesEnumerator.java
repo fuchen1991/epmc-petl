@@ -58,7 +58,6 @@ import epmc.value.EvaluatorCache;
 import epmc.value.OperatorEvaluator;
 import epmc.value.Type;
 import epmc.value.TypeBoolean;
-import epmc.value.TypeBounded;
 import epmc.value.TypeEnumerable;
 import epmc.value.UtilValue;
 import epmc.value.Value;
@@ -453,7 +452,7 @@ public final class VariableValuesEnumerator {
         int varNr = 0;
         for (Variable variable : variables.values()) {
             Type variableType = variable.getType().toType();
-            assert TypeBounded.is(variableType) : variable;
+//            assert TypeBounded.is(variableType) : variable;
             VariableDD variableDD = contextDD.newVariable(variable.getName(),
                     variableType, 1);
             bddVariables.put(variable.getIdentifier(), variableDD);

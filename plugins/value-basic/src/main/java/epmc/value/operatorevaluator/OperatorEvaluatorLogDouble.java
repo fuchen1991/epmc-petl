@@ -60,7 +60,7 @@ public final class OperatorEvaluatorLogDouble implements OperatorEvaluator {
             if (operator != OperatorLog.LOG) {
                 return null;
             }
-            if (types.length != 1) {
+            if (types.length != 2) {
                 return null;
             }
             for (Type type : types) {
@@ -88,6 +88,7 @@ public final class OperatorEvaluatorLogDouble implements OperatorEvaluator {
             assert operand != null;
         }
         double value1 = UtilValue.getDoubleOrInt(operands[0]);
-        ValueDouble.as(result).set(Math.log(value1));
+        double value2 = UtilValue.getDoubleOrInt(operands[1]);
+        ValueDouble.as(result).set(Math.log(value1) / Math.log(value2));
     }
 }

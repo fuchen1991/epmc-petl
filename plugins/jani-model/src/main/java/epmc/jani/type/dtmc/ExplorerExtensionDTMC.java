@@ -41,6 +41,7 @@ import epmc.value.OperatorEvaluator;
 import epmc.value.TypeBoolean;
 import epmc.value.TypeEnum;
 import epmc.value.TypeWeightTransition;
+import epmc.value.UtilValue;
 import epmc.value.ValueAlgebra;
 import epmc.value.ValueBoolean;
 
@@ -71,6 +72,10 @@ public final class ExplorerExtensionDTMC implements ExplorerExtension {
         assert this.explorer == null;
         assert explorer != null;
         this.explorer = explorer;
+    }
+    
+    @Override
+    public void afterSystemCreation() {
         this.system = explorer.getExplorerSystem();
         player = new PropertyNodeGeneral(explorer, TypeEnum.get(Player.class));
         player.set(Player.STOCHASTIC);
@@ -79,8 +84,8 @@ public final class ExplorerExtensionDTMC implements ExplorerExtension {
         systemWeight = (PropertyEdgeGeneral) system.getEdgeProperty(CommonProperties.WEIGHT);
         dtmcSum = TypeWeightTransition.get().newValue();
         dtmcAligned = TypeWeightTransition.get().newValue();
-        zero = TypeWeightTransition.get().getZero();
-        one = TypeWeightTransition.get().getOne();
+        zero = UtilValue.newValue(TypeWeightTransition.get(), 0);
+        one = UtilValue.newValue(TypeWeightTransition.get(), 1);
         divide = ContextValue.get().getEvaluator(OperatorDivide.DIVIDE, TypeWeightTransition.get(), TypeWeightTransition.get());
         eq = ContextValue.get().getEvaluatorOrNull(OperatorEq.EQ, TypeWeightTransition.get(), TypeWeightTransition.get());
         add = ContextValue.get().getEvaluator(OperatorAdd.ADD, TypeWeightTransition.get(), TypeWeightTransition.get());

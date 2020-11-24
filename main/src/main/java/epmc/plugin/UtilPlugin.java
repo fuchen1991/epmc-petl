@@ -102,16 +102,21 @@ public final class UtilPlugin {
     public static void loadPlugins(Options options) {
         assert options != null;
         List<String> plugins = getPluginList(options);
-
         assert plugins != null;
-        PluginLoader pluginLoader = new PluginLoader(options, plugins);
-
-        options.set(OptionsPlugin.PLUGIN_INTERFACE_CLASS, pluginLoader.getPluginInterfaceClasses());
+        List<Class<? extends PluginInterface>> pluginClasses = loadPlugins(plugins);
+        options.set(OptionsPlugin.PLUGIN_INTERFACE_CLASS, pluginClasses);
 
         for (Class<? extends AfterOptionsCreation> clazz : getPluginInterfaceClasses(options, AfterOptionsCreation.class)) {
             AfterOptionsCreation object = Util.getInstance(clazz);
             object.process(options);
         }
+    }
+
+    public static List<Class<? extends PluginInterface>> loadPlugins(List<String> plugins) {
+        assert plugins != null;
+        PluginLoader pluginLoader = new PluginLoader(plugins);
+        PluginLoader.set(pluginLoader);
+        return pluginLoader.getPluginInterfaceClasses();
     }
 
     /**
@@ -136,6 +141,13 @@ public final class UtilPlugin {
         List<Class<? extends PluginInterface>> classes =
                 options.get(OptionsPlugin.PLUGIN_INTERFACE_CLASS);
         assert classes != null;
+        return getPluginInterfaceClasses(classes, shallImplement);
+    }
+
+    public static <T extends PluginInterface> List<Class<T>> getPluginInterfaceClasses(
+            List<Class<? extends PluginInterface>> classes, Class<T> shallImplement) {
+        assert classes != null;
+        assert shallImplement != null;
         List<Class<T>> result = new ArrayList<>();
         for (Class<? extends PluginInterface> clazz : classes) {
             if (shallImplement.isAssignableFrom(clazz)) {
@@ -148,6 +160,7 @@ public final class UtilPlugin {
         return result;
     }
 
+    
     /**
      * Get plugin filenames specified in options.
      * The list of plugins does not include the plugins embedded into the

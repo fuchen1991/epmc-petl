@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -35,7 +36,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import epmc.automaton.SpotParser;
+import epmc.automaton.hoa.HanoiHeader;
+import epmc.automaton.hoa.HoaParser;
 import epmc.expression.Expression;
 import epmc.expression.evaluatorexplicit.EvaluatorExplicit;
 import epmc.expression.standard.ExpressionIdentifier;
@@ -47,6 +49,7 @@ import epmc.expression.standard.ExpressionTemporalGlobally;
 import epmc.expression.standard.ExpressionTemporalNext;
 import epmc.expression.standard.ExpressionTemporalRelease;
 import epmc.expression.standard.ExpressionTemporalUntil;
+import epmc.expression.standard.UtilExpressionStandard;
 import epmc.expression.standard.evaluatorexplicit.UtilEvaluatorExplicit;
 import epmc.graph.CommonProperties;
 import epmc.graph.explicit.EdgeProperty;
@@ -64,14 +67,14 @@ import epmc.value.Type;
 import epmc.value.TypeBoolean;
 import epmc.value.Value;
 import epmc.value.ValueBoolean;
-import epmc.value.ValueInteger;
 
 public class BuechiImpl implements Buechi {
     private final static String SPOT_PARAM_FORMULA = "-f";
     private final static String SPOT_PARAM_LOW_OPTIMISATIONS = "--low";
+    private final static String SPOT_PARAM_FORCE_TRANSITION_BASED_ACCEPTANCE = "-Ht";
+    private final static String DETERMINISTIC = "deterministic";
 
     private final static String IDENTIFIER = "buechi-spot";
-    private final String ltl2tgba;
     private final GraphExplicit automaton;
     private int numLabels;
     private final int trueState;
@@ -79,6 +82,7 @@ public class BuechiImpl implements Buechi {
     private final EvaluatorExplicit[] evaluators;
     private final Expression[] expressions;
     private final Type[] expressionTypes;
+    private final String name;
 
     @Override
     public String getIdentifier() {
@@ -87,15 +91,23 @@ public class BuechiImpl implements Buechi {
 
     public BuechiImpl(Expression expression, Expression[] expressions) {
         assert expression != null;
+        this.name = UtilExpressionStandard.niceForm(expression);
         // TODO does not work if used there
         //        if (options.getBoolean(OptionsAutomaton.AUTOMATA_REPLACE_NE)) {
         //          expression = replaceNeOperator(expression);
         //    }
-        this.ltl2tgba = Options.get().getString(OptionsAutomaton.AUTOMATON_SPOT_LTL2TGBA_CMD);
         OptionsAutomaton.Ltl2BaAutomatonBuilder builder = Options.get().getEnum(OptionsAutomaton.AUTOMATON_BUILDER);
         Set<Expression> expressionsSeen = new HashSet<>();
         if (builder == OptionsAutomaton.Ltl2BaAutomatonBuilder.SPOT) {
             automaton = createSpotAutomaton(expression, expressionsSeen);
+            deterministic = false;
+            HanoiHeader header = automaton.getGraphPropertyObject(HanoiHeader.class);
+            for (String automatonPropert : header.getProperties()) {
+                if (automatonPropert.equals(DETERMINISTIC)) {
+                    deterministic = true;
+                    break;
+                }
+            }
         } else {
             automaton = null;
         }
@@ -105,6 +117,13 @@ public class BuechiImpl implements Buechi {
             for (Expression expr : expressionsSeen) {
                 expressions[index] = expr;
                 index++;
+            }
+        }
+        EdgeProperty labels = automaton.getEdgeProperty(CommonProperties.AUTOMATON_LABEL);
+        for (int node = 0; node < automaton.getNumNodes(); node++) {
+            for (int succNr = 0; succNr < automaton.getNumSuccessors(node); succNr++) {
+                BuechiTransition trans = labels.getObject(node, succNr);
+                numLabels = Math.max(numLabels, trans.getLabeling().length());
             }
         }
         if (this.numLabels == 0) {
@@ -125,7 +144,6 @@ public class BuechiImpl implements Buechi {
         }
         this.evaluators = new EvaluatorExplicit[totalSize];
         totalSize = 0;
-        EdgeProperty labels = automaton.getEdgeProperty(CommonProperties.AUTOMATON_LABEL);
         for (int node = 0; node < automaton.getNumNodes(); node++) {
             for (int succNr = 0; succNr < automaton.getNumSuccessors(node); succNr++) {
                 BuechiTransition trans = labels.getObject(node, succNr);
@@ -144,7 +162,7 @@ public class BuechiImpl implements Buechi {
             }
         }
     }
-
+    
     @Override
     public Expression[] getExpressions() {
         return expressions;
@@ -175,7 +193,7 @@ public class BuechiImpl implements Buechi {
         return trueState;
     }
 
-    private GraphExplicit createSpotAutomaton(Expression expression, Set<Expression> expressionsSeen) {
+    private static GraphExplicit createSpotAutomaton(Expression expression, Set<Expression> expressionsSeen) {
         assert expression != null;
         assert expressionsSeen != null;
         Map<Expression,String> expr2str = new HashMap<>();
@@ -185,35 +203,37 @@ public class BuechiImpl implements Buechi {
         expressionsSeen.addAll(expr2str.keySet());
         String spotFn = expr2spot(expression, expr2str);
         assert spotFn != null;
+        
         Map<String,Expression> ap2expr = new LinkedHashMap<>();
         for (Entry<Expression,String> entry : expr2str.entrySet()) {
             ap2expr.put(entry.getValue(), entry.getKey());
         }
+        return createSpotAutomaton(spotFn, null, ap2expr);
+    }
+
+    public static GraphExplicit createSpotAutomaton(String spotFn, List<String> additionalSpotParamerters, Map<String, Expression> ap2expr) {
+        String ltl2tgba = Options.get().getString(OptionsAutomaton.AUTOMATON_SPOT_LTL2TGBA_CMD);
         try {
-            // TODO it seems that one cannot produce both the automaton and the
-            // statistics in a single call. Quite annoying. Check whether this
-            // is possible once a new version of SPOT appears.
-            final String[] autExecArgs = {ltl2tgba,
+            ArrayList<String> autExecArgsList = new ArrayList<>();
+            autExecArgsList.addAll(Arrays.asList(new String[]{ltl2tgba,
                     SPOT_PARAM_FORMULA, spotFn,
-                    SPOT_PARAM_LOW_OPTIMISATIONS};
+                    SPOT_PARAM_LOW_OPTIMISATIONS,
+                    SPOT_PARAM_FORCE_TRANSITION_BASED_ACCEPTANCE}));
+            if (additionalSpotParamerters != null) {
+                autExecArgsList.addAll(additionalSpotParamerters);
+            }
+            final String[] autExecArgs = autExecArgsList.toArray(new String[0]);
             final Process autProcess = Runtime.getRuntime().exec(autExecArgs);
             final BufferedReader autIn = new BufferedReader
                     (new InputStreamReader(autProcess.getInputStream()));
             GraphExplicit automaton;
-            SpotParser spotParser = new SpotParser(autIn);
+            HoaParser spotParser = new HoaParser(autIn);
             automaton = spotParser.parseAutomaton(ap2expr);
             try {
                 ensure(autProcess.waitFor() == 0, ProblemsAutomaton.LTL2BA_SPOT_PROBLEM_EXIT_CODE);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            this.numLabels = ValueInteger.as(automaton.getGraphProperty(CommonProperties.NUM_LABELS)).getInt();
-            final String[] detExecArr = {ltl2tgba, SPOT_PARAM_FORMULA, spotFn, "--stats", "%d",
-            "--low"};
-            final Process detProcess = Runtime.getRuntime().exec(detExecArr);
-            int detResult = detProcess.getInputStream().read();
-            ensure(detResult != -1, ProblemsAutomaton.LTL2BA_SPOT_PROBLEM_IO);
-            deterministic = ((char) detResult) == '1';
             return automaton;
         } catch (IOException e) {
             fail(ProblemsAutomaton.LTL2BA_SPOT_PROBLEM_IO, e, ltl2tgba);
@@ -468,5 +488,10 @@ public class BuechiImpl implements Buechi {
                 .setOperator(OperatorNot.NOT)
                 .setOperands(expression)
                 .build();
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

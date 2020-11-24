@@ -1,45 +1,35 @@
-## Model Checking Probabilistic Epistemic Logic for Probabilistic Multiagent Systems
+# EPMC - (An Extendible Probabilistic Model Checker, previously known as IscasMC)
 
-This tool is implemented as a plugin in ePMC. All the implementation details related to PETL model checking are under "epmc-petl/plugins/propertysolver-petl". And you can find the experiment files used in the paper under "experiment_files". For building, running and other information about ePMC, please visit https://github.com/liyi-david/ePMC. 
+EPMC is a successor of the model checker IscasMC which only focuses on PLTL model checking over MDP.
 
-For more information about the PETL model checking algorithm, please visit https://www.ijcai.org/proceedings/2018/661.
+Compared to IscasMC, EPMC supports a richer set of probabilistic models including
 
-To perform PETL model checking, please set the following options:
-```
---property-solver propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,pctl-explicit-until-uniform
---prism-flatten false
---model-input-type mas
---property-input-type petl
---smtlib-command-line z3 -smt2 {0} 
---smtlib-version v25 
---constraintsolver-solver smt-lib 
---model-input-files /path/to/your-model /path/to/your-equivalence-relation 
---property-input-files /path/to/your-property
-```
-You need to prepare 3 files: one for the model, one for equivalence relations, and one for properties.
+* Discrete Time Markov Chains (DTMCs)
+* Markov Decision Processes (MDPs)
+* Continuous Time Markov Chains (CTMCs)
+* Stochastic Multi-player games (SMGs)
+* Probabilistic Parity Games (PPGs)
 
-The models should be in the PRISM format(http://www.prismmodelchecker.org/manual/ThePRISMLanguage). Note that we redefine the composition of the modules to make the agents all take one local action in each transition, so the transitions from different modules will not synchronize according to the parallel composition operator.
+All input models can be specified in the PRISM format and JANI format.
 
-The equivalence relations are described in this format:
-```
-equiv agent1
--- formula1;
--- formula2;
-......
-equiv end
-equiv agent2
--- formula1;
--- formula2;
-......
-equiv end
-......
-......
-```
-Each agent in the model has a "equiv (agent name) ... equiv end" block, and each block contains a set of formulas. You can use the variables used in the model. All the states satisfying the same formula are regarded as equivalent by the agent. So you can not write formulas such that one state satisfies two or more formulas. If one state can not satisfy any formula, it's not equivalent to any other states.
+EPMC implemented the supports for
 
-The knowledge properties are described like this:
-```
-K {agent}  (state_formula)
-E/C/D {agent1,..., agentn}  (state_formula)
-```
-Other properties can be described by the PRISM language(http://www.prismmodelchecker.org/manual/PropertySpecification).
+* PCTL
+* PLTL
+* PCTL*
+* CSL (in progress)
+* Transient Properties (in progress)
+* Expected Rewards (in progress)
+
+The main characteristics of EPMC are *the high modularity of the tool, the possibility to extend EPMC with plugins to add new functionalities, and its availability on multiple platforms*. EPMC achieves its flexibility by an infrastructure that consists of a minimal core part and multiple plugins that is very convenient to develop a new model checker based on the core parts of EPMC.
+
+EPMC is mainly developed in Java, but accesses a few libraries written in C/C++ to increase performance or to access well established legacy code. Its graphical user interface (GUI) is a single static webpage. The GUI communicates with the backend, where core functions (like model checking) and high-privilege operations (like file I/O) are realised.
+
+Please follow our [wiki documentations](../../wiki/Documentations) to build and use EPMC.
+
+## Contact
+Comments and feedback about any aspect of ePMC are very welcome. Please contact:
+
+Andrea Turrini
+
+(family_name_AT_ios_DOT_ac_DOT_cn)

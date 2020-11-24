@@ -20,6 +20,8 @@
 
 package epmc.jani.model;
 
+import java.util.Map;
+
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
@@ -41,13 +43,16 @@ public interface ModelExtension {
         return null;
     }
 
-
     default void setNode(JANINode node) {
     }
 
     default void setJsonValue(JsonValue value) {
     }
 
+    default void setIdentifiers(Map<String, ? extends JANIIdentifier> identifiers) {
+    }
+
+    
     default void parseBefore() {
     }
 

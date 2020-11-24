@@ -20,12 +20,9 @@
 
 package epmc.value;
 
-import static epmc.error.UtilError.fail;
-
-import epmc.util.BitStream;
 import epmc.value.Value;
 
-public final class ValueInteger implements ValueNumber, ValueEnumerable, ValueNumBitsKnown, ValueRange, ValueBitStoreable, ValueSetString, ValueSetInteger, ValueGetInteger {
+public interface ValueInteger extends ValueNumber, ValueNumBitsKnown, ValueBitStoreable, ValueSetString {
     public static boolean is(Value value) {
         return value instanceof ValueInteger;
     }
@@ -38,125 +35,16 @@ public final class ValueInteger implements ValueNumber, ValueEnumerable, ValueNu
         }
     }
 
-    private final static String SPACE = " ";
-    private int value;
-    private final TypeInteger type;
-    private boolean immutable;
-
-    ValueInteger(TypeInteger type) {
-        this.type = type;
-    }
+    @Override
+    TypeInteger getType();
 
     @Override
-    public TypeInteger getType() {
-        return type;
-    }
+    int getInt();
 
-    @Override
-    public int getInt() {
-        return value;
-    }
-
-    @Override
-    public void set(int value) {
-        assert !isImmutable();
-        this.value = value;
-    }
+    void set(int value);
     
     @Override
-    public boolean equals(Object obj) {
-        assert obj != null;
-        if (!(obj instanceof ValueInteger)) {
-            return false;
-        }
-        ValueInteger other = (ValueInteger) obj;
-        return this.value == other.value;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 0;
-        hash = getClass().hashCode() + (hash << 6) + (hash << 16) - hash;
-        hash = value + (hash << 6) + (hash << 16) - hash;
-        return hash;
-    }
-
-    @Override
-    public String toString() {
-        return Integer.toString(value);
-    }
-
-    @Override
-    public void read(BitStream reader) {
-        assert !isImmutable();
-        assert reader != null;
-        int value = reader.read(getNumBits());
-        if (TypeInteger.isIntegerBothBounded(getType())) {
-            value += getBoundLower();
-        }
-        set(value);
-    }
-
-    @Override
-    public void write(BitStream writer) {
-        assert writer != null;
-        int value = getInt();
-        if (TypeInteger.isIntegerBothBounded(getType())) {
-            value -= getBoundLower();
-        }
-        writer.write(value, getNumBits());
-    }
-
-    public int getBoundLower() {
-        return getType().getLowerInt();
-    }
-
-    public int getBoundUpper() {
-        return getType().getUpperInt();
-    }
-
-    @Override
-    public double getDouble() {
-        return value;
-    }
-
-    @Override
-    public boolean checkRange() {
-        return value >= getType().getLowerInt() && value <= getType().getUpperInt();
-    }    
-
-    public boolean isBothBounded() {
-        return TypeInteger.isIntegerBothBounded(getType());
-    }
-
-    @Override
-    public void set(String value) {
-        assert value != null;
-        try {
-            this.value = Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            fail(ProblemsValueBasic.VALUES_STRING_INVALID_VALUE, e, value, type);
-        }
-    }
-
-    @Override
-    public int getValueNumber() {
-        return value - getType().getLowerInt();
-    }
-
-    void setImmutable() {
-        this.immutable = true;
-    }
-
-    boolean isImmutable() {
-        return immutable;
-    }
-
-    @Override
-    public void setValueNumber(int number) {
-        assert number >= 0 : number;
-        assert number < type.getUpperInt() + 1 - type.getLowerInt() :
-            number + SPACE + type.getLowerInt() + SPACE + type.getUpperInt();
-        set(type.getLowerInt() + number);
+    default double getDouble() {
+        return getInt();
     }
 }

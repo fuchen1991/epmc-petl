@@ -79,7 +79,7 @@ public final class JANIExpressionIdentifier implements JANIExpression {
     @Override 
     public JANIExpression parseAsJANIExpression(JsonValue value) {
         assert model != null;
-        assert validIdentifiers != null;
+//        assert validIdentifiers != null;
         assert value != null;
         resetFields();
         if (!(value instanceof JsonString)) {
@@ -88,6 +88,10 @@ public final class JANIExpressionIdentifier implements JANIExpression {
         if (validIdentifiers != null) {
             JANIIdentifier janiIdentifier = UtilJSON.toOneOf(value, validIdentifiers);
             identifier = janiIdentifier.getIdentifier();
+            if (identifier == null) {
+                System.out.println(value + " " + janiIdentifier);
+                System.out.println(validIdentifiers);
+            }
         } else {
             identifier = new ExpressionIdentifierStandard.Builder()
                     .setName(value.toString())
@@ -102,7 +106,7 @@ public final class JANIExpressionIdentifier implements JANIExpression {
     public JsonValue generate() {
         assert initialized;
         assert model != null;
-        assert validIdentifiers != null;
+//        assert validIdentifiers != null;
         return UtilJSON.toStringValue(identifier.getName());
     }
 
@@ -125,7 +129,7 @@ public final class JANIExpressionIdentifier implements JANIExpression {
     public Expression getExpression() {
         assert initialized;
         assert model != null;
-        assert validIdentifiers != null;
+//        assert validIdentifiers != null;
         return identifier.replacePositional(positional);
     }
 

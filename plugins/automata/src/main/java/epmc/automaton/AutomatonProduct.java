@@ -20,11 +20,10 @@
 
 package epmc.automaton;
 
-import gnu.trove.map.hash.THashMap;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -79,18 +78,18 @@ public final class AutomatonProduct implements Automaton {
         }
     }
 
-    private final AutomatonMaps automatonMaps = new AutomatonMaps();
+    private final AutomatonMaps<AutomatonProductState,AutomatonProductLabelImpl> automatonMaps = new AutomatonMaps<>();
 
     @Override
     public int getNumStates() {
         return automatonMaps.getNumStates();
     }
 
-    protected <T extends AutomatonStateUtil> T makeUnique(T state) {
+    protected AutomatonProductState makeUnique(AutomatonProductState state) {
         return automatonMaps.makeUnique(state);
     }
 
-    protected <T extends AutomatonLabelUtil> T makeUnique(T label) {
+    protected AutomatonProductLabelImpl makeUnique(AutomatonProductLabelImpl label) {
         return automatonMaps.makeUnique(label);
     }
 
@@ -157,17 +156,15 @@ public final class AutomatonProduct implements Automaton {
     }
 
     public final static class AutomatonProductState implements AutomatonStateUtil {
-        private final Automaton automaton;
         private final int[] states;
         private int number;
 
-        AutomatonProductState(Automaton automaton, int[] states) {
-            this.automaton = automaton;
+        AutomatonProductState(int[] states) {
             this.states = Arrays.copyOf(states, states.length);
         }
 
         AutomatonProductState(AutomatonProductState other) {
-            this(other.getAutomaton(), other.states);
+            this(other.states);
         }
 
         @Override
@@ -202,11 +199,6 @@ public final class AutomatonProduct implements Automaton {
         }
 
         @Override
-        public Automaton getAutomaton() {
-            return this.automaton;
-        }
-
-        @Override
         public void setNumber(int number) {
             this.number = number;
         }
@@ -224,7 +216,7 @@ public final class AutomatonProduct implements Automaton {
     private AutomatonProductLabelImpl succLabel;
     private final int[] succStateArray;
     private final int[] succLabelingsArray;
-    private final Map<CacheKey,CacheValue> cache = new THashMap<>();
+    private final Map<CacheKey,CacheValue> cache = new HashMap<>();
     private final CacheKey testEntry = new CacheKey();
 
     public AutomatonProduct(Automaton[] automata) {
@@ -236,7 +228,7 @@ public final class AutomatonProduct implements Automaton {
         for (int i = 0; i < automata.length; i++) {
             init[i] = automata[i].getInitState();
         }
-        this.initState = makeUnique(new AutomatonProductState(this, init));
+        this.initState = makeUnique(new AutomatonProductState(init));
         List<Automaton> automataList = new ArrayList<>();
         for (Automaton automaton : automata) {
             automataList.add(automaton);
@@ -284,7 +276,7 @@ public final class AutomatonProduct implements Automaton {
             succStateArray[i] = automata[i].getSuccessorState();
             succLabelingsArray[i] = automata[i].getSuccessorLabel();
         }
-        this.succState = makeUnique(new AutomatonProductState(this, succStateArray));
+        this.succState = makeUnique(new AutomatonProductState(succStateArray));
         this.succLabel = makeUnique(new AutomatonProductLabelImpl(succLabelingsArray));
         CacheKey cacheKey = new CacheKey(modelState, automatonState);
         CacheValue cacheValue = new CacheValue();

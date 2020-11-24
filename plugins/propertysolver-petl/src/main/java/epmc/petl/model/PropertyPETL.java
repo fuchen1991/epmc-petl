@@ -1,23 +1,3 @@
-/****************************************************************************
-
-    ePMC - an extensible probabilistic model checker
-    Copyright (C) 2017
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
- *****************************************************************************/
-
 package epmc.petl.model;
 
 import java.io.BufferedReader;
@@ -36,12 +16,6 @@ import epmc.petl.property.PETLExpressionParser;
 import epmc.prism.model.PropertyPRISM;
 import epmc.value.Type;
 
-/**
- * Property for knowledge
- * 
- * @author Chen Fu
- */
-
 public class PropertyPETL implements Property{
 	public final static String IDENTIFIER = "petl";
 	
@@ -49,7 +23,8 @@ public class PropertyPETL implements Property{
 
 	@Override
 	public String getIdentifier() {
-		return IDENTIFIER;
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
@@ -68,20 +43,19 @@ public class PropertyPETL implements Property{
 	}
 
 	@Override
-	public Type parseType(Object identifier, String type) {
-		return propertyPrism.parseType(identifier, type);
-	}
-
-	@Override
 	public void readProperties(Object identifier, RawProperties properties, InputStream stream) {
 		propertyPrism.readProperties(identifier, properties, stream);
 	}
 
 	@Override
 	public void writeProperties(RawProperties properties, OutputStream stream) {
-		propertyPrism.writeProperties(properties, stream);
+		// TODO Auto-generated method stub
 		
 	}
 
-	
+	@Override
+	public Type parseType(Object identifier, String type) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

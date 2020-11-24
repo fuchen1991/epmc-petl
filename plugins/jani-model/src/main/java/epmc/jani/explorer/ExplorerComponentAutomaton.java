@@ -50,6 +50,7 @@ import epmc.jani.model.component.Component;
 import epmc.jani.model.component.ComponentAutomaton;
 import epmc.jani.model.type.JANIType;
 import epmc.jani.value.TypeLocation;
+import epmc.jani.value.ValueLocation;
 import epmc.operator.OperatorAdd;
 import epmc.operator.OperatorIsZero;
 import epmc.operator.OperatorMultiply;
@@ -59,13 +60,12 @@ import epmc.value.Type;
 import epmc.value.TypeBoolean;
 import epmc.value.TypeInteger;
 import epmc.value.TypeWeightTransition;
+import epmc.value.UtilValue;
 import epmc.value.Value;
 import epmc.value.ValueAlgebra;
 import epmc.value.ValueBoolean;
 import epmc.value.ValueInteger;
-import gnu.trove.iterator.TObjectIntIterator;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * Explorer for an automaton component.
@@ -73,7 +73,7 @@ import gnu.trove.map.hash.TObjectIntHashMap;
  * @author Ernst Moritz Hahn
  */
 public final class ExplorerComponentAutomaton implements ExplorerComponent {
-    private final static class ExpressionToTypeAutomaton implements ExpressionToType {
+    private final class ExpressionToTypeAutomaton implements ExpressionToType {
         private final Map<Expression,Variable> variables = new LinkedHashMap<>();
 
         private ExpressionToTypeAutomaton(Collection<Variable> variables) {
@@ -90,17 +90,26 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
         public Type getType(Expression expression) {
             assert expression != null;
             Variable variable = variables.get(expression);
-            if (variable == null) {
-                return null;
+            if (variable == null && ExpressionIdentifierStandard.is(expression)) {
+                expression = new ExpressionIdentifierStandard.Builder()
+                        .setName(ExpressionIdentifierStandard.as(expression).getName())
+                        .setScope(componentAutomaton.getAutomaton())
+                        .build();
+                variable = variables.get(expression);
             }
-            JANIType type = variable.getType();
-            if (type == null) {
-                return null;
+            if (variable != null) {
+                JANIType type = variable.getType();
+                if (type == null) {
+                    return null;
+                }
+                return type.toType();
             }
-            return type.toType();
+            return null;
+            // TODO ..
         }
     }
 
+    private EvaluatorCache evaluatorCache;
     /** Name of variable denoting location of automaton. */
     private final static String LOCATION_IDENTIFIER = "%locId";
     private final static String EDGE_IDENTIFIER = "%edge";
@@ -201,10 +210,11 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
     public void build() {
         assert explorer != null;
         assert component != null;
+        evaluatorCache = explorer.getEvaluatorCache();
         componentAutomaton = (ComponentAutomaton) component;
         nonDet = SemanticsNonDet.isNonDet(explorer.getModel().getSemantics());
         stochastic = SemanticsStochastic.isStochastic(explorer.getModel().getSemantics());
-        weightZero = TypeWeightTransition.get().getZero();
+        weightZero = UtilValue.newValue(TypeWeightTransition.get(), 0);
         automaton = componentAutomaton.getAutomaton();
         typeLocation = TypeLocation.get(automaton.getLocations());
         buildTypeEdge();
@@ -214,7 +224,7 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
         prepareProperties();
         name = componentAutomaton.getAutomaton().getName().intern();
         number = componentAutomaton.getAutomaton().getNumber();
-        actionFromTo = new int[explorer.getModel().getActions().size() + 1 + 1];
+        actionFromTo = new int[explorer.getModel().getActionsOrEmpty().size() + 1 + 1];
         cmp = TypeBoolean.get().newValue();
         isZero = ContextValue.get().getEvaluator(OperatorIsZero.IS_ZERO, TypeWeightTransition.get());
         add = ContextValue.get().getEvaluator(OperatorAdd.ADD, TypeWeightTransition.get(), TypeWeightTransition.get());
@@ -293,17 +303,16 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
      * Build the type storing the edge number of an automaton.
      */
     private void buildTypeEdge() {
-        TObjectIntMap<Location> locationNumEdges = new TObjectIntHashMap<>();
+        Object2IntOpenHashMap<Location> locationNumEdges = new Object2IntOpenHashMap<>();
         for (Edge edge : automaton.getEdges()) {
             Location location = edge.getLocation();
-            locationNumEdges.put(location, locationNumEdges.get(location) + 1);
+            locationNumEdges.put(location, locationNumEdges.getInt(location) + 1);
         }
-        int maxNumEdges = 0;
-        for (TObjectIntIterator<Location> it = locationNumEdges.iterator(); it.hasNext();) {
-            it.advance();
-            maxNumEdges = Math.max(maxNumEdges, it.value());
-        }
-        typeEdge = TypeInteger.get(-1, maxNumEdges - 1);
+        int[] maxNumEdges = new int[1];
+        locationNumEdges.forEach((a,b) -> {
+            maxNumEdges[0] = Math.max(maxNumEdges[0], b);
+        });
+        typeEdge = TypeInteger.get(-1, maxNumEdges[0] - 1);
     }
 
     /**
@@ -323,7 +332,6 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
             edgeEvaluators[locNr] = new EdgeEvaluator[locationsNumEdges[locNr]];
         }
         Arrays.fill(locationsNumEdges, 0);
-        EvaluatorCache evaluatorCache = new EvaluatorCache();
         ExpressionToTypeAutomaton expressionToType = new ExpressionToTypeAutomaton(this.variableToNumber.keySet());
         ContextExpressionSimplifier simplifier = new ContextExpressionSimplifier(expressionToType, evaluatorCache);
         for (Edge edge : edges) {
@@ -349,7 +357,6 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
     private void buildTransientValueEvaluators() {
         locationEvaluators = new AssignmentsEvaluator[automaton.getLocations().size()];
         int index = 0;
-        EvaluatorCache evaluatorCache = new EvaluatorCache();        
         ExpressionToTypeAutomaton expressionToType = new ExpressionToTypeAutomaton(this.variableToNumber.keySet());
         ContextExpressionSimplifier simplifier = new ContextExpressionSimplifier(expressionToType, evaluatorCache);
         for (Location location : automaton.getLocations()) {
@@ -360,6 +367,7 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
                     .setVariableMap(variableToNumber)
                     .setVariables(explorer.getStateVariables().getIdentifiersArray())
                     .setSimplifier(simplifier)
+                    .setEvaluatorCache(evaluatorCache)
                     .build();
             index++;
         }
@@ -370,7 +378,7 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
         ModelJANI model = edges.getModel();
         assert model != null;
         List<List<Edge>> actionToEdges = new ArrayList<>();
-        for (int actNr = 0; actNr < model.getActions().size() + 1; actNr++) {
+        for (int actNr = 0; actNr < model.getActionsOrEmpty().size() + 1; actNr++) {
             actionToEdges.add(new ArrayList<>());
         }
         Map<Action, Integer> map = UtilExplorer.computeActionToInteger(model);
@@ -458,7 +466,7 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
                     int varNr = variableToNumber.get(entry.getKey());
                     initialNode.setVariable(varNr, entry.getValue());
                 }
-                initialNode.unmark();
+//                initialNode.unmark();
                 result.add(initialNode);
             }
         }
@@ -484,7 +492,7 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
         if (locationVarNr == -1) {
             location = 0;
         } else {
-            location = ValueInteger.as(nodeValues[locationVarNr]).getInt();
+            location = ValueLocation.as(nodeValues[locationVarNr]).getValueNumber();
         }
         locationEvaluators[location].apply(node, node);
         EdgeEvaluator[] locationEdgeEvaluators = edgeEvaluators[location];
@@ -542,7 +550,7 @@ public final class ExplorerComponentAutomaton implements ExplorerComponent {
         if (locationVarNr == -1) {
             location = 0;
         } else {
-            location = ValueInteger.as(nodeValues[locationVarNr]).getInt();
+            location = ValueLocation.as(nodeValues[locationVarNr]).getValueNumber();
         }
         EdgeEvaluator[] locationEdgeEvaluators = edgeEvaluators[location];
         if (edge == -1) {

@@ -79,6 +79,18 @@ public final class UtilEvaluatorExplicit {
             }
             return true;
         }
+        
+        
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append(returnType);
+            builder.append(",");
+            builder.append(expression);
+            builder.append(",");
+            builder.append(Arrays.toString(variables));
+            return builder.toString();
+        }
     }
 
     public static EvaluatorExplicitBoolean newEvaluatorBoolean(Expression expression, ExpressionToType expressionToType, Expression[] variables, EvaluatorCache cache) {
@@ -131,9 +143,12 @@ public final class UtilEvaluatorExplicit {
         //        UtilEvaluatorExplicitCompile.compile(returnType, expression, variables);
         assert expression != null;
         assert variables != null;
+        if (cache == null) {
+            cache = new EvaluatorCache();
+        }
         assert cache != null;
         for (Expression variable : variables) {
-            assert variable != null;
+            assert variable != null : Arrays.toString(variables);
         }
         assert expressionToType != null;
         EvaluatorCacheEntry entry = new EvaluatorCacheEntry(returnType, expression, variables);

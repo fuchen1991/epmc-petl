@@ -2,14 +2,10 @@
 <classpath>
 	<classpathentry kind="src" path="src/main/resources"/>
 	<classpathentry kind="src" path="src/main/java"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-9">
-		<attributes>
-			<attribute name="module" value="true"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/epmc"/>
-	<classpathentry kind="lib" path="/epmc/lib/trove-141006211716.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/epmc-dd"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/epmc-value-basic"/>
+	<classpathentry kind="lib" path="/epmc/lib/fastutil-8.2.2.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

@@ -8,7 +8,7 @@
     <artifactId>epmc-plugin-base</artifactId>
     <version>0</version>
     <relativePath>../plugin-base/pom.xml</relativePath>
-   </parent>
+  </parent>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -38,33 +38,6 @@
     </plugins>
   </build>
   <dependencies>
-  <dependency>
-      <groupId>epmc.prism</groupId>
-      <artifactId>epmc-prism-format</artifactId>
-      <version>0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../prism-format/target/epmc-prism-format-0.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>epmc.constraintsolver</groupId>
-      <artifactId>epmc-constraintsolver</artifactId>
-      <version>0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../constraintsolver/target/epmc-constraintsolver-0-distribution.jar</systemPath>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-    <groupId>epmc</groupId>
-    <artifactId>epmc</artifactId>
-    <version>0</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/../../main/target/epmc-0-distribution.jar</systemPath>
-    </dependency>
     <dependency>
       <groupId>epmc.graphsolver</groupId>
       <artifactId>epmc-graphsolver</artifactId>
@@ -72,7 +45,7 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/../graphsolver/target/epmc-graphsolver-0.jar</systemPath>
     </dependency>
-     <dependency>
+    <dependency>
       <groupId>epmc.expression.standard</groupId>
       <artifactId>epmc-expression-basic</artifactId>
       <version>0</version>
@@ -114,6 +87,20 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/../util/target/epmc-util-0.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>epmc.constraintsolver</groupId>
+      <artifactId>epmc-constraintsolver</artifactId>
+      <version>0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../constraintsolver/target/epmc-constraintsolver-0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>epmc.prism</groupId>
+      <artifactId>epmc-prism-format</artifactId>
+      <version>0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../prism-format/target/epmc-prism-format-0.jar</systemPath>
+    </dependency>
 	<dependency>
       <groupId>epmc.jani</groupId>
       <artifactId>epmc-jani-model</artifactId>
@@ -122,4 +109,13 @@
       <systemPath>${project.basedir}/../jani-model/target/epmc-jani-model-0.jar</systemPath>
     </dependency>
   </dependencies>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javacc-maven-plugin</artifactId>
+        <version>2.6</version>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>
