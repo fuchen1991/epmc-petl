@@ -72,3 +72,10 @@ K {agent}  (state_formula)
 E/C/D {agent1,..., agentn}  (state_formula)
 ```
 Other properties can be described by the PRISM language(http://www.prismmodelchecker.org/manual/PropertySpecification).
+
+## Contact
+Comments and feedback about any this project are very welcome. Please contact:
+
+Chen Fu
+
+fchen###ios.ac.cn
