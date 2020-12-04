@@ -20,24 +20,14 @@
 
 package epmc.petl.plugin;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
-import epmc.constraintsolver.options.OptionsConstraintsolver;
-import epmc.petl.constraintsolver.smtlib.ConstraintSolverSMTLib;
 import epmc.graph.LowLevel;
 import epmc.modelchecker.options.OptionsModelChecker;
-import epmc.options.Category;
 import epmc.options.OptionTypeBoolean;
-import epmc.options.OptionTypeEnum;
 import epmc.options.OptionTypeInteger;
 import epmc.options.OptionTypeMap;
-import epmc.options.OptionTypeString;
-import epmc.options.OptionTypeStringList;
 import epmc.options.Options;
-import epmc.petl.constraintsolver.smtlib.options.OptionsSMTLib;
-import epmc.petl.constraintsolver.smtlib.options.SMTLibVersion;
 import epmc.petl.model.LowLevelMASBuilder;
 import epmc.petl.model.ModelMAS;
 import epmc.petl.model.PropertyPETL;
@@ -79,56 +69,55 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         Map<String,Class<?>> solvers = options.get(OptionsModelChecker.PROPERTY_SOLVER_CLASS);
         solvers.put(PropertySolverExplicitApproximationUntilUniform.IDENTIFIER, PropertySolverExplicitApproximationUntilUniform.class);
         solvers.put(PropertySolverExplicitKnowledge.IDENTIFIER, PropertySolverExplicitKnowledge.class);
-        
         //solvers.put(PropertySolverExplicitPCTLUntilUniform.IDENTIFIER, PropertySolverExplicitPCTLUntilUniform.class);
         
         
-        Map<String,Class<?>> smtSolvers = options.get(OptionsConstraintsolver.CONSTRAINTSOLVER_SOLVER_CLASS);
-        assert smtSolvers != null;
-        smtSolvers.put(ConstraintSolverSMTLib.IDENTIFIER, ConstraintSolverSMTLib.class);
-        
-        Category category = options.addCategory()
-                .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
-                .setIdentifier(OptionsSMTLib.SMTLIB_CATEGORY)
-                .setParent(OptionsConstraintsolver.CONSTRAINTSOLVER_CATEGORY)
-                .build();
-        OptionTypeStringList typeCommand = new OptionTypeStringList("command");
-        List<String> defaultCommandLine = new ArrayList<>();
-        defaultCommandLine.add("z3");
-        defaultCommandLine.add("-I");
-        defaultCommandLine.add("{0}");
-        options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
-        .setIdentifier(OptionsSMTLib.SMTLIB_COMMAND_LINE)
-        .setCategory(category)
-        .setType(typeCommand)
-        .setDefault(defaultCommandLine)
-        .setCommandLine().setGui().setWeb()
-        .build();
+//        Map<String,Class<?>> smtSolvers = options.get(OptionsConstraintsolver.CONSTRAINTSOLVER_SOLVER_CLASS);
+//        assert smtSolvers != null;
+//        smtSolvers.put(ConstraintSolverSMTLib.IDENTIFIER, ConstraintSolverSMTLib.class);
+//        
+//        Category category = options.addCategory()
+//                .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+//                .setIdentifier(OptionsSMTLib.SMTLIB_CATEGORY)
+//                .setParent(OptionsConstraintsolver.CONSTRAINTSOLVER_CATEGORY)
+//                .build();
+//        OptionTypeStringList typeCommand = new OptionTypeStringList("command");
+//        List<String> defaultCommandLine = new ArrayList<>();
+//        defaultCommandLine.add("z3");
+//        defaultCommandLine.add("-I");
+//        defaultCommandLine.add("{0}");
+//        options.addOption()
+//        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+//        .setIdentifier(OptionsSMTLib.SMTLIB_COMMAND_LINE)
+//        .setCategory(category)
+//        .setType(typeCommand)
+//        .setDefault(defaultCommandLine)
+//        .setCommandLine().setGui().setWeb()
+//        .build();
 
-        OptionTypeBoolean typeBoolean1 = OptionTypeBoolean.getInstance();
-        options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
-        .setIdentifier(OptionsSMTLib.SMTLIB_KEEP_TEMPORARY_FILES)
-        .setCategory(category)
-        .setType(typeBoolean1)
-        .setDefault(false)
-        .setCommandLine().setGui().setWeb()
-        .build();
-
-        OptionTypeEnum typeSMTLibVersion = new OptionTypeEnum(SMTLibVersion.class);
-        options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
-        .setIdentifier(OptionsSMTLib.SMTLIB_VERSION)
-        .setCategory(category)
-        .setType(typeSMTLibVersion)
-        .setDefault(SMTLibVersion.V20)
-        .setCommandLine().setGui().setWeb()
-        .build();
+//        OptionTypeBoolean typeBoolean1 = OptionTypeBoolean.getInstance();
+//        options.addOption()
+//        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+//        .setIdentifier(OptionsSMTLib.SMTLIB_KEEP_TEMPORARY_FILES)
+//        .setCategory(category)
+//        .setType(typeBoolean1)
+//        .setDefault(false)
+//        .setCommandLine().setGui().setWeb()
+//        .build();
+//
+//        OptionTypeEnum typeSMTLibVersion = new OptionTypeEnum(SMTLibVersion.class);
+//        options.addOption()
+//        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+//        .setIdentifier(OptionsSMTLib.SMTLIB_VERSION)
+//        .setCategory(category)
+//        .setType(typeSMTLibVersion)
+//        .setDefault(SMTLibVersion.V20)
+//        .setCommandLine().setGui().setWeb()
+//        .build();
         
         OptionTypeInteger typeUCTInteger = OptionTypeInteger.getInstance();
         options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setBundleName(OptionsUCT.OPTIONS_UCT)
         .setIdentifier(OptionsUCT.UCT_DEPTH_LIMIT)
         .setType(typeUCTInteger)
         .setDefault(10)
@@ -136,7 +125,7 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         .build();
         
         options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setBundleName(OptionsUCT.OPTIONS_UCT)
         .setIdentifier(OptionsUCT.UCT_TIME_LIMIT)
         .setType(typeUCTInteger)
         .setDefault(1)
@@ -144,7 +133,7 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         .build();
         
         options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setBundleName(OptionsUCT.OPTIONS_UCT)
         .setIdentifier(OptionsUCT.RANDOM_SEED)
         .setType(typeUCTInteger)
         .setDefault(1)
@@ -152,7 +141,7 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         .build();
         
         options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setBundleName(OptionsUCT.OPTIONS_UCT)
         .setIdentifier(OptionsUCT.PRINT_TIME_INTERVAL)
         .setType(typeUCTInteger)
         .setDefault(1)
@@ -161,7 +150,7 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         
         //OptionTypeString typeUCTString = OptionTypeString.getInstance();
         options.addOption()
-        .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
+        .setBundleName(OptionsUCT.OPTIONS_UCT)
         .setIdentifier(OptionsUCT.BVALUE)
         .setType(typeUCTInteger)
         .setDefault(1)

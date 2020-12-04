@@ -15,6 +15,7 @@
 /home/fuchen/ePMC/plugins/command-explore/target/classes
 /home/fuchen/ePMC/plugins/constraintsolver/target/classes
 /home/fuchen/ePMC/plugins/constraintsolver-lp-solve/target/classes
+/home/fuchen/ePMC/plugins/constraintsolver-smt-lib/target/classes
 /home/fuchen/ePMC/plugins/propertysolver-propositional/target/classes
 /home/fuchen/ePMC/plugins/propertysolver-operator/target/classes
 /home/fuchen/ePMC/plugins/propertysolver-reward/target/classes
