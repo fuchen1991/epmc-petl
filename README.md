@@ -8,24 +8,7 @@ This tool is used to model check Probabilistic Epistemic Temporal Logic (PETL) f
 
 
 ## About the files
-This tool is implemented as a plugin in ePMC. Almost all the implementation details related to PETL model checking are under "epmc-petl/plugins/propertysolver-petl". The only exception is in plugins/constraintsolver-smt-lib/src/main/java/epmc/constraintsolver/smtlib/ConstraintSolverSMTLib.java, where we add these lines:
-```java
-public int getNumberOfVariables()
-	{
-		return this.variables.size();
-	}
-	public int getNumberOfConstraints()
-	{
-		//For each variable, we need to add two more constraints
-		return this.constraints.size() + 2*this.variables.size();
-	}
-```
-to get the numbers of variables and constraints in the MINLP problems. This doesn't affect the algorithms, so if you don't want this or just don't want to add the above code, you can comment this two lines:
-```java
-System.out.println("Number of variables:" + ((ConstraintSolverSMTLib)solver).getNumberOfVariables());
-System.out.println("Number of constraints:" + ((ConstraintSolverSMTLib)solver).getNumberOfConstraints());
-```
-in function 'computeProbabilities' at plugins/propertysolver-petl/src/main/java/epmc/propertysolver/UtilConstraints.java.
+This tool is implemented as a plugin in ePMC. All the implementation details related to PETL model checking are under "epmc-petl/plugins/propertysolver-petl". 
 
 You can find the experiment files used in the paper under "experiment_files". 
 
@@ -41,7 +24,7 @@ To perform PETL model checking, please set the following options:
 --property-input-type petl
 --smtlib-command-line z3 -smt2 {0} 
 --smtlib-version v25 
---constraintsolver-solver smt-lib 
+--constraintsolver-solver smt-lib-petl
 --model-input-files /path/to/your-model /path/to/your-equivalence-relation 
 --property-input-files /path/to/your-property
 ```
@@ -72,6 +55,16 @@ K {agent}  (state_formula)
 E/C/D {agent1,..., agentn}  (state_formula)
 ```
 Other properties can be described by the PRISM language(http://www.prismmodelchecker.org/manual/PropertySpecification).
+
+## Tips for developing
+
+Although there is  a "epmc-constraintsolver-smt-lib" plugin, it's not enough for our MINLP problems. We change the classes "ConstraintSolverSMTLib", "InputWriter", and "OutputReader". And we  also copy "SMTLibOperator", "SMTLibResult", and "SMTLibVariable", because they are not public classes.  We use some other classes from  "epmc-constraintsolver-smt-lib", so  we need to add this plugin as a dependency. We call our new constraint solver as "smt-lib-petl".
+
+
+"ModelMAS" is the class to store the model, where we change the composition of the modules. And "EquivalenceRelations" is the class for  equivalence relations.
+
+
+The model checking algorithms are in the classes under epmc.propertysolver in the petl plugin.
 
 ## Contact
 Comments and feedback about any this project are very welcome. Please contact:
