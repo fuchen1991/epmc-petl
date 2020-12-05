@@ -19,7 +19,7 @@ import epmc.graph.explicit.NodeProperty;
 import epmc.graph.explicit.StateSetExplicit;
 import epmc.jani.model.Action;
 import epmc.modelchecker.ModelChecker;
-import epmc.constraintsolver.smtlib.ConstraintSolverSMTLib;
+import epmc.constraintsolver.smtlib.petl.ConstraintSolverSMTLib;
 import epmc.petl.model.ModelMAS;
 import epmc.prism.model.Module;
 import epmc.util.BitSet;

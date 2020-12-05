@@ -95,6 +95,13 @@
       <systemPath>${project.basedir}/../constraintsolver/target/epmc-constraintsolver-0.jar</systemPath>
     </dependency>
     <dependency>
+      <groupId>epmc.constraintsolver.smtlib</groupId>
+      <artifactId>epmc-constraintsolver-smt-lib</artifactId>
+      <version>0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../constraintsolver-smt-lib/target/epmc-constraintsolver-smt-lib-0.jar</systemPath>
+    </dependency>
+    <dependency>
       <groupId>epmc.prism</groupId>
       <artifactId>epmc-prism-format</artifactId>
       <version>0</version>

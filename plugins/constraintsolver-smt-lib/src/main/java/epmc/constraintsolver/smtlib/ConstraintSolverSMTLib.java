@@ -198,14 +198,4 @@ public final class ConstraintSolverSMTLib implements ConstraintSolver {
     public String getVariableName(int number) {
         return variables.get(number).getName();
     }
-	
-	public int getNumberOfVariables()
-	{
-		return this.variables.size();
-	}
-	public int getNumberOfConstraints()
-	{
-		//For each variable, we need to add two more constraints
-		return this.constraints.size() + 2*this.variables.size();
-	}
 }
