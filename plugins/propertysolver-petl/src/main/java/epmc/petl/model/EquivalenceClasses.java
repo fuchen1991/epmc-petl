@@ -33,6 +33,8 @@ public class EquivalenceClasses {
 		equivalenceClassesMap = new HashMap<String, Map<Integer, BitSet>>();
 		equivalenceClasses = new HashMap<String, List<BitSet>>();
 		Map<String, List<Expression>> rel = relations.getEquivalenceRelations();
+		NodeProperty isState = graph.getNodeProperty(CommonProperties.STATE);
+		
 		for(Entry<String, List<Expression>> entry : rel.entrySet())
 		{
 			String player = entry.getKey();
@@ -45,11 +47,9 @@ public class EquivalenceClasses {
 		        StateMapExplicit innerResult = (StateMapExplicit) modelChecker.check(exp, allStates);
 		        UtilGraph.registerResult(graph, exp, innerResult);
 		        allStates.close();
-		        
 		        //EvaluatorExplicitBoolean evaluator = UtilEvaluatorExplicit.newEvaluatorBoolean(exp, graph, UtilPETL.collectIdentifiers(exp).toArray(new Expression[0]));
 		        //Value evalValues;
 		        BitSet oneStates = UtilBitSet.newBitSetBounded(graph.getNumNodes());
-		        NodeProperty isState = graph.getNodeProperty(CommonProperties.STATE);
 		        for (int i = 0; i < innerResult.size(); i++) {
 		            int state = innerResult.getExplicitIthState(i);
 		            if(hasBeenTaken[state])
@@ -81,7 +81,7 @@ public class EquivalenceClasses {
 			}
 			for(int i=0;i<hasBeenTaken.length;i++)
 			{
-				if(!hasBeenTaken[i])
+				if(!hasBeenTaken[i] && isState.getBoolean(i))
 				{
 					BitSet singleton = UtilBitSet.newBitSetBounded(i+1);
 					singleton.set(i);

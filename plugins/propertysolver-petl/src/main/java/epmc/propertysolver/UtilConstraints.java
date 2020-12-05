@@ -50,7 +50,7 @@ public class UtilConstraints {
 		String res = variables.get(builder.toString());
 		if(res!=null)
 			return res;
-		res = "_" + variableCounter + "";
+		res = variableCounter + "";
 		variableCounter++;
 		variables.put(builder.toString(), res);
 		return res;
@@ -243,12 +243,12 @@ public class UtilConstraints {
     		
     		int numSucc = graph.getNumSuccessors(node);
     		result += numSucc;
-    		for (int succNr = 0; succNr < numSucc; succNr++)
-    		{
-    			int succ = graph.getSuccessorNode(node, succNr);
-    			int num_Succ = graph.getNumSuccessors(succ);
-    			result += num_Succ;
-    		}
+//    		for (int succNr = 0; succNr < numSucc; succNr++)
+//    		{
+//    			int succ = graph.getSuccessorNode(node, succNr);
+//    			int num_Succ = graph.getNumSuccessors(succ);
+//    			result += num_Succ;
+//    		}
     	}
     	return result;
     }
@@ -256,6 +256,9 @@ public class UtilConstraints {
 	private static void addConstraintsOfFVariables(ConstraintSolver solver, BitSet unKnown, BitSet oneSet, BitSet zeroSet, GraphExplicit graph, ModelChecker modelChecker)
 	{
 		NodeProperty stateProp = graph.getNodeProperty(CommonProperties.STATE);
+		EdgeProperty label = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
+		EdgeProperty weight = graph.getEdgeProperty(CommonProperties.WEIGHT);
+		
 		int nodeNum = graph.getNumNodes();
 		int upper = graph.computeNumStates() - zeroSet.cardinality();
 		TypeInteger typeInteger = TypeInteger.get();
@@ -287,6 +290,7 @@ public class UtilConstraints {
         {
         	solver.addConstraint(UtilPETL.parseExpression("!(f" + state + "=1)"));
         	solver.addConstraint(UtilPETL.parseExpression("f" + state + "=0 => x" + state + "=0"));
+        	
         	StringBuilder builder = new StringBuilder();
         	StringBuilder builderForSec = new StringBuilder();
         	builder.append("f" + state + ">1 =>");
@@ -297,7 +301,6 @@ public class UtilConstraints {
         	Map<Integer, List<String>> stateToProba = new HashMap<Integer, List<String>>();
         	for(int succIter = 0;succIter<numSucc;succIter++)
         	{
-        		EdgeProperty label = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
                 Value value = label.get(state, succIter);
                 Action ac = (Action) ((ValueObject)value).getObject();
                 String globalAction = ac.getName();
@@ -306,7 +309,6 @@ public class UtilConstraints {
         		int realNumSucc = graph.getNumSuccessors(proNode);
         		for(int realSuccIter=0;realSuccIter<realNumSucc;realSuccIter++)
         		{
-        			EdgeProperty weight = graph.getEdgeProperty(CommonProperties.WEIGHT);
         			String pro = weight.get(proNode, realSuccIter).toString();
         			int realSucc = graph.getSuccessorNode(proNode, realSuccIter);
         			
@@ -339,7 +341,7 @@ public class UtilConstraints {
         		List<String> actions = stateToActions.get(succState);
         		List<String> probas = stateToProba.get(succState);
         		builder.append("f" + state + "=f" + succState + "+1 & (");
-        		builderForSec.append("(f" + succState + "=0 & (");
+        		builderForSec.append("f" + succState + "=0 | ");
         		
         		StringBuilder builderHelp = new StringBuilder();
         		for(int iter = 0;iter<actions.size();iter++)
@@ -362,7 +364,7 @@ public class UtilConstraints {
         			builder.append(proba + ">0");
         			builderHelp.append(proba);
         		}
-        		builderForSec.append(builderHelp.toString() + ">0 )) | ( " + builderHelp.toString() + ")=0)");
+        		builderForSec.append("(" + builderHelp.toString() + ")=0 )");
         		builder.append("))");
         	}
         	solver.addConstraint(UtilPETL.parseExpression(builder.toString()));
@@ -414,14 +416,13 @@ public class UtilConstraints {
 	{
 		int size = computeForStates.size();
 		double[] resultValue = new double[size];
-        
 		System.out.println("Number of transitions:" + computeNumberOfEdges(graph));
 		
 		if(!min)
 		{
 			addConstraintsOfFVariables(solver, unKnown, oneSet, zeroSet, graph, modelChecker);
 		}
-		
+        System.out.println("***********");
 		System.out.println("Number of variables:" + ((ConstraintSolverSMTLib)solver).getNumberOfVariables());
 		System.out.println("Number of constraints:" + ((ConstraintSolverSMTLib)solver).getNumberOfConstraints());
 		

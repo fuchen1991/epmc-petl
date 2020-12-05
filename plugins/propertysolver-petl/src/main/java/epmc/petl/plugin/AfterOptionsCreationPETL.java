@@ -84,8 +84,6 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         assert smtSolvers != null;
         smtSolvers.put(ConstraintSolverSMTLib.IDENTIFIER, ConstraintSolverSMTLib.class);
         
-        System.out.println("xxxxx");
-        System.out.println(OptionsConstraintsolver.CONSTRAINTSOLVER_CATEGORY);
         Category category = options.addCategory()
                 .setBundleName(OptionsSMTLib.OPTIONS_SMTLIB)
                 .setIdentifier(OptionsSMTLib.SMTLIB_CATEGORY)

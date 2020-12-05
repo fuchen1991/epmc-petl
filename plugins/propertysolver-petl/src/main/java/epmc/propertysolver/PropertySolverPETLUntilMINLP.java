@@ -161,6 +161,7 @@ public class PropertySolverPETLUntilMINLP implements PropertySolver {
             negate = false;
         }
         StateSet allStates = UtilGraph.computeAllStatesExplicit(modelChecker.getLowLevel());
+
         ExpressionTemporalUntil propertyTemporal = ExpressionTemporalUntil.as(property);
         Expression op1 = propertyTemporal.getOperandLeft();
         StateMapExplicit innerResult1 = (StateMapExplicit) modelChecker.check(op1, allStates);
@@ -188,11 +189,13 @@ public class PropertySolverPETLUntilMINLP implements PropertySolver {
         NodeProperty stateProp = graph.getNodeProperty(CommonProperties.STATE);
         ValueBoolean valueLeft = TypeBoolean.get().newValue();
         ValueBoolean valueRight = TypeBoolean.get().newValue();
+        
         for (int i = 0; i < innerLeft.size(); i++) {
             int state = innerLeft.getExplicitIthState(i);
             if (!stateProp.getBoolean(state)) {
                 continue;
             }
+            
             innerLeft.getExplicitIthValue(valueLeft, i);
             innerRight.getExplicitIthValue(valueRight, i);
             boolean left = valueLeft.getBoolean();
