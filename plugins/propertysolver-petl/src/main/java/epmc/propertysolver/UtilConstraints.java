@@ -422,7 +422,6 @@ public class UtilConstraints {
 		{
 			addConstraintsOfFVariables(solver, unKnown, oneSet, zeroSet, graph, modelChecker);
 		}
-        System.out.println("***********");
 		System.out.println("Number of variables:" + ((ConstraintSolverSMTLib)solver).getNumberOfVariables());
 		System.out.println("Number of constraints:" + ((ConstraintSolverSMTLib)solver).getNumberOfConstraints());
 		
