@@ -14,11 +14,11 @@ You can find the experiment files used in the paper under "experiment_files".
 
 ## Building and running
 
-For building, running and other information about ePMC, please visit https://github.com/ISCAS-PMC/ePMC. Note that the easiest way is to run command line './build.sh petl' and use 'epmc-petl.jar'.
+For building, running and other information about ePMC, please visit https://github.com/ISCAS-PMC/ePMC. The easiest way is to firstly build the project by command line './build.sh petl' and then use 'epmc-petl.jar'.
 
-To perform PETL model checking, please set the following options:
+There are two algorithms for PETL model checking, to run the algorithm which reduces the problem to MINLP, you need to set the following options:
 ```
---property-solver propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,pctl-explicit-until-uniform
+--property-solver propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,petl-until-minlp
 --prism-flatten false
 --model-input-type mas
 --property-input-type petl
@@ -28,6 +28,22 @@ To perform PETL model checking, please set the following options:
 --model-input-files /path/to/your-model /path/to/your-equivalence-relation 
 --property-input-files /path/to/your-property
 ```
+
+To run the algorithm based on UCT, you need to set the following options:
+```
+--property-solver propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,petl-until-uct
+--prism-flatten false
+--model-input-type mas
+--property-input-type petl
+--uct-depth-limit your-depth-limit
+--uct-time-limit your-time-limit
+--bvalue your-bvalue-coefficient
+--print-time-interval your-print-time-interval
+--random-seed your-random-seed
+--model-input-files /path/to/your-model /path/to/your-equivalence-relation 
+--property-input-files /path/to/your-property
+```
+
 You need to prepare 3 files: one for the model, one for equivalence relations, and one for properties.
 
 The models should be in the PRISM format(http://www.prismmodelchecker.org/manual/ThePRISMLanguage). Note that we redefine the composition of the modules to make the agents all take one local action in each transition, so the transitions from different modules will not synchronize according to the parallel composition operator.
