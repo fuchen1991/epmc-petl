@@ -230,6 +230,7 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
         UtilGraph.registerResult(graph, op2, innerResult2);
         allStates.close();
         this.computeForStates = (StateSetExplicit) states;
+
         return solve(propertyTemporal, min, negate, innerResult1, innerResult2);
 	}
 	

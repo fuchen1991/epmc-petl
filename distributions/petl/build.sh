@@ -17,6 +17,7 @@ prepare_plugin prism-format
 prepare_plugin command-check
 prepare_plugin command-help
 prepare_plugin constraintsolver
+prepare_plugin constraintsolver-smt-lib
 prepare_plugin propertysolver-propositional
 prepare_plugin propertysolver-operator
 prepare_plugin propertysolver-pctl

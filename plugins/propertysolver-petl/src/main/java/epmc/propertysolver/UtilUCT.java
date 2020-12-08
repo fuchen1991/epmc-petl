@@ -110,6 +110,8 @@ public class UtilUCT {
 		int rolloutTimes = 0;
 		long elapsed = 0;
 		StopWatch watch = new StopWatch(true);
+		Set<Integer> visitedStates = new HashSet<Integer>();
+		visitedStates.add(state);
 		if(min)
 		{
 			while(watch.getTimeSeconds() < timeLimit)
@@ -121,7 +123,7 @@ public class UtilUCT {
 				}
 				root.increaseVisitedTimes();
 				rolloutTimes += 1;
-				rollout_min_onthefly_maxnotB(root, depthLimit, new ArrayList<FixedAction>(), min);
+				rollout_min_onthefly_maxnotB(root, depthLimit, new ArrayList<FixedAction>(), min,visitedStates);
 				//if(root.getR() == 0.0)
 				//	break;
 			}
@@ -137,7 +139,7 @@ public class UtilUCT {
 				}
 				root.increaseVisitedTimes();
 				rolloutTimes += 1;
-				rollout_max_onthefly(root, depthLimit, new ArrayList<FixedAction>(),min);
+				rollout_max_onthefly(root, depthLimit, new ArrayList<FixedAction>(),min,visitedStates);
 				//if(root.getR() == 1.0)
 				//	break;
 			}
@@ -153,7 +155,7 @@ public class UtilUCT {
 		return final_res;
 	}
 
-	private static double rollout_max_onthefly(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
+	private static double rollout_max_onthefly(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min, Set<Integer> visitedStates)
 	{
 		if(depth == 0)
 			return 0.0;
@@ -169,7 +171,7 @@ public class UtilUCT {
 			}
 			next.increaseVisitedTimes();
 			addFixedActionInLocation(fixedActions, node, next);
-			res = rollout_max_onthefly(next,depth, fixedActions,min);
+			res = rollout_max_onthefly(next,depth, fixedActions,min,visitedStates);
 		}
 		else
 		{
@@ -185,11 +187,22 @@ public class UtilUCT {
 				{
 					rs = 0.0;
 				}
+				else if(succ.getProbability() >=1 && visitedStates.contains(succ.getState()))
+				{
+					//A loop with probability 1 is detected
+					rs = 0.0;
+				}
 				else// if(depth > 0)
 				{
 					if(depth > 0 && !succ.isInitialized())
 						exploreSearchTreeOnTheFly(succ, min);
-					rs = succ.getProbability() * rollout_max_onthefly(succ, depth-1, fixedActions,min);
+					Set<Integer> newVisitedStates = new HashSet<Integer>();
+					if(succ.getProbability() >= 1)
+					{
+						newVisitedStates.addAll(visitedStates);
+						newVisitedStates.add(succ.getState());
+					}
+					rs = succ.getProbability() * rollout_max_onthefly(succ, depth-1, fixedActions,min,newVisitedStates);
 				}
 				res += rs;
 			}
@@ -206,7 +219,7 @@ public class UtilUCT {
 		return res;
 	}
 	
-	private static double rollout_min_onthefly_maxnotB(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
+	private static double rollout_min_onthefly_maxnotB(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min, Set<Integer> visitedStates)
 	{
 		if(depth == 0)
 			return 0;
@@ -222,7 +235,7 @@ public class UtilUCT {
 			}
 			next.increaseVisitedTimes();
 			addFixedActionInLocation(fixedActions, node, next);
-			res = rollout_min_onthefly_maxnotB(next,depth, fixedActions,min);
+			res = rollout_min_onthefly_maxnotB(next,depth, fixedActions,min,visitedStates);
 		}
 		else
 		{
@@ -238,13 +251,26 @@ public class UtilUCT {
 				{
 					rs = succ.getProbability();
 				}
+				else if(succ.getProbability() >=1 && visitedStates.contains(succ.getState()))
+				{
+					//A loop is detected
+					rs = succ.getProbability();
+				}
 				else// if(depth > 0)
 				{
 					if(depth > 0 && !succ.isInitialized())
 						exploreSearchTreeOnTheFly(succ, min);
-					rs = succ.getProbability() * rollout_min_onthefly_maxnotB(succ, depth-1, fixedActions,min);
+					Set<Integer> newVisitedStates = new HashSet<Integer>();
+					if(succ.getProbability() >= 1)
+					{
+						newVisitedStates.addAll(visitedStates);
+						newVisitedStates.add(succ.getState());
+					}
+					rs = succ.getProbability() * rollout_min_onthefly_maxnotB(succ, depth-1, fixedActions,min,newVisitedStates);
 				}
 				res += rs;
+//				if(res > 1)
+//					System.out.println(res);
 			}
 		}
 		if(res > node.getR())
