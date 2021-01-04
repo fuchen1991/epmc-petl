@@ -29,3 +29,4 @@
 /home/fuchen/ePMC/plugins/automaton-determinisation/target/classes
 /home/fuchen/ePMC/plugins/graphsolver-lp/target/classes
 /home/fuchen/ePMC/plugins/dd-sylvan-mtbdd/target/classes
+/home/fuchen/ePMC/plugins/webserver/target/classes

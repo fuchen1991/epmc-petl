@@ -1,0 +1,42 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>epmc-webserver</groupId>
+  <artifactId>epmc-webserver</artifactId>
+  <version>0</version>
+  <!--<parent>
+    <groupId>epmc.pluginbase</groupId>
+    <artifactId>epmc-plugin-base</artifactId>
+    <version>0</version>
+    <relativePath>../plugin-base/pom.xml</relativePath>
+  </parent>-->
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <release>13</release>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <!--  <dependencies>
+    <dependency>
+      <groupId>epmc.command.check</groupId>
+      <artifactId>epmc-command-check</artifactId>
+      <version>0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../command-check/target/epmc-command-check-0.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>epmc.jani.interaction</groupId>
+      <artifactId>epmc-jani-interaction</artifactId>
+      <version>0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../jani-interaction/target/epmc-jani-interaction-0.jar</systemPath>
+    </dependency>
+  </dependencies>-->
+</project>
