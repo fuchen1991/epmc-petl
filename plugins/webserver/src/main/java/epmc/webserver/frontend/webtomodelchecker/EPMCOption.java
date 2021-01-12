@@ -7,7 +7,7 @@ package epmc.webserver.frontend.webtomodelchecker;
 public final class EPMCOption {
 
 	/**
-	 * The name if the option
+	 * The name of the option
 	 */
 	public final String name;
 

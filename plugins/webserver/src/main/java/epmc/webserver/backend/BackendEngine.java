@@ -229,7 +229,6 @@ public class BackendEngine {
 		mailReceivers = conf.getProperty("mailReceivers");
 		
 		DBMS dbms = null;
-
 		String db_host = conf.getProperty("db_host", "127.0.0.1");
 		String db_port = conf.getProperty("db_port", "3306");
 		String db_name = conf.getProperty("db_name", "iscasmc");

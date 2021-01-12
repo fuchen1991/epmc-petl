@@ -17,3 +17,5 @@ target/
 # IntelliJ IDEA
 *.[ei]ml
 .idea/*
+
+webserver.config

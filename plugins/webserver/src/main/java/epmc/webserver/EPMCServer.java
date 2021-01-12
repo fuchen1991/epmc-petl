@@ -6,9 +6,11 @@ import java.io.InputStream;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-import epmc.command.CommandTaskCheck;
+//import epmc.command.CommandTaskCheck;
 import epmc.error.EPMCException;
 import epmc.main.LogCommandLine;
 import epmc.main.error.ProblemsEPMC;
@@ -28,6 +30,7 @@ import epmc.plugin.AfterCommandExecution;
 import epmc.plugin.AfterModelCreation;
 import epmc.plugin.BeforeModelCreation;
 import epmc.plugin.UtilPlugin;
+import epmc.prism.options.OptionsPRISM;
 import epmc.util.Util;
 import epmc.value.ContextValue;
 
@@ -44,14 +47,28 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
 	}
 
 	@Override
-	public ModelCheckerResult execute(RawModel rawModel, EPMCMessageChannel channel, String serverName, String command, String inputType)
+	public ModelCheckerResult execute(RawModel rawModel, EPMCMessageChannel channel, String serverName, String command, String inputType, String petlSolver)
 			throws RemoteException {
-		System.out.println("execute in EPMCServer");
-		
 		Options options = Options.get();
 		options.set(OptionsWebserver.SERVER_NAME, serverName);
 		options.set(Options.COMMAND, command);
 		options.set(OptionsModelChecker.MODEL_INPUT_TYPE, inputType);
+		if(inputType.equals("mas"))
+		{
+			options.set(OptionsPRISM.PRISM_FLATTEN, false);
+			options.set(OptionsModelChecker.PROPERTY_INPUT_TYPE, "petl");
+			List<String> ops = new ArrayList<String>();
+			ops.add("z3");
+			ops.add("-smt2");
+			ops.add("{0}");
+			if(petlSolver.equals("minlp"))
+				options.set(OptionsModelChecker.PROPERTY_SOLVER, "propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,petl-until-minlp");
+			else
+				options.set(OptionsModelChecker.PROPERTY_SOLVER, "propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,petl-until-uct");
+			options.set("constraintsolver-solver", "smt-lib-petl");
+			options.set("smtlib-command-line", ops);
+			options.set("smtlib-version", "v25");
+		}
 
 		ContextValue.set(new ContextValue());
 		ensure(channel != null, ProblemWebserver.EXECUTE_CHANNEL_MISSING);
@@ -74,7 +91,6 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
         assert runMode != null;
         String commandName = options.getString(Options.COMMAND);
         
-        System.out.println(commandName);
         ensure(commandName != null, ProblemWebserver.EXECUTE_NO_COMMAND_GIVEN);
         if (commandName.equals(EXIT)) {
             options.clear();
@@ -98,15 +114,6 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
         processBeforeModelLoadings(options);
         Model model = parseModel(rawModel);
 
-//        System.out.println("-----*************-------- Options ------------");    
-//        for (String key : options.getAllOptions().keySet())
-//        {
-//        	System.out.println(key + " : " + options.get(key));
-//        }
-//        System.out.println("------****************-------- Options end------------");
-
-        System.out.println("parseModel Finished");
-        System.out.println(model.getClass());
         processAfterModelLoadings(options);
         Properties properties = model.getPropertyList();
 
@@ -114,9 +121,7 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
 //        CommandTask command = Util.getInstance(commands, commandName);
         ModelChecker modelChecker = new ModelChecker(model);
 //        command.setModelChecker(modelChecker);
-        System.out.println("start to check");
         modelChecker.check();
-        System.out.println("checking ends");
         
         ModelCheckerResult result = new ModelCheckerResult();
         int index = 0;
@@ -143,8 +148,6 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
             } else {
                 resultString = propResult.toString();
             }
-            System.out.println(exprString + "-------");
-            System.out.println(resultString + "-------");
             result.add(property, resultString);
             index++;
         }
@@ -165,13 +168,7 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
         return result;
 	}
 
-	@Override
-	public String ttest() throws RemoteException{
-		return "HHHHHH";
-	}
-
 	private void processBeforeModelLoadings(Options options) throws EPMCException {
-		System.out.println( "(((()))))))))))))))))" );
         for (Class<? extends BeforeModelCreation> clazz : UtilPlugin.getPluginInterfaceClasses(Options.get(), BeforeModelCreation.class)) {
             BeforeModelCreation beforeModelLoading = null;
             beforeModelLoading = Util.getInstance(clazz);
@@ -180,7 +177,6 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
     }
 
     private void processAfterModelLoadings(Options options) throws EPMCException {
-    	System.out.println(UtilPlugin.getPluginInterfaceClasses(Options.get(), AfterModelCreation.class).size() + " -------------- ");
         for (Class<? extends AfterModelCreation> clazz : UtilPlugin.getPluginInterfaceClasses(Options.get(), AfterModelCreation.class)) {
         	
             AfterModelCreation afterModelLoading = null;
@@ -206,7 +202,6 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
             model.read(rawModel.getModelInputIdentifier(), inputs);
 
         }
-        System.out.println("Parse Model Finished");
         
 //        try {
 //			System.out.println(new String(rawModel.getPropertyInputStreams()[0].readAllBytes()));
@@ -226,7 +221,6 @@ public class EPMCServer extends UnicastRemoteObject implements EPMCRemote{
 //        	System.out.println(p.getDefinition() + " **********");
 //        }
         
-        System.out.println("Parse Properties Finished");
         return model;
     }
 }
