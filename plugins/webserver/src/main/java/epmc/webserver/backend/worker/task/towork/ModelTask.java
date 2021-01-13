@@ -11,6 +11,7 @@ public abstract class ModelTask extends Task {
 	private final String model;
 	private final String modelType;
 	private final String options;
+	private final String equivContent;
 	
 	/**
 	 * Create a new task identified by taskId for the user identified by userId for the given model and options
@@ -21,11 +22,12 @@ public abstract class ModelTask extends Task {
 	 * @param model the actual model to work on
 	 * @param options the options for this model
 	 */
-	protected ModelTask(int userId, int taskId, TaskOperation operation, String modelType, String model, String options) {
+	protected ModelTask(int userId, int taskId, TaskOperation operation, String modelType, String model, String options, String equivContent) {
 		super(userId, taskId, operation);
 		this.model = model;
 		this.modelType = modelType;
 		this.options = options;
+		this.equivContent = equivContent;
 	}
 	
 	/**
@@ -50,5 +52,9 @@ public abstract class ModelTask extends Task {
 	 */
 	public String getOptions() {
 		return options;
+	}
+	
+	public String getEquivContent() {
+		return equivContent;
 	}
 }

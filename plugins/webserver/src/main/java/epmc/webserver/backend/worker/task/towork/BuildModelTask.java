@@ -17,8 +17,8 @@ public class BuildModelTask extends ModelTask {
 	 * @param model the actual model to work on
 	 * @param options the options for this model
 	 */
-	public BuildModelTask(int userId, int taskId, String model_type, String model, String options) {
-		super(userId, taskId, TaskOperation.build, model_type, model, options);
+	public BuildModelTask(int userId, int taskId, String model_type, String model, String options, String equivContent) {
+		super(userId, taskId, TaskOperation.build, model_type, model, options, equivContent);
 	}
 	
 }

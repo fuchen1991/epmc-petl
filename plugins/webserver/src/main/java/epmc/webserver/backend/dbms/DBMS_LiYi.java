@@ -93,7 +93,7 @@ public class DBMS_LiYi extends DBMS {
 			connection.setAutoCommit(false);
 			st = connection.createStatement();
 //			rs = st.executeQuery("select task.id as id, user.id as userId, model_content, modelname, model_options, model_type, type, status from task inner join user on task.username = user.username where status = '" + TaskStatus.pending.name() + "' order by user.authority asc, task.id desc;");
-			rs = st.executeQuery("select task.id as id, user.id as userId, model_content, modelname, model_options, model_type, type, status from task inner join user on task.username = user.username where status = '" + TaskStatus.pending.name() + "';");
+			rs = st.executeQuery("select task.id as id, user.id as userId, model_content, modelname, model_options, model_type, type, status, equiv_content from task inner join user on task.username = user.username where status = '" + TaskStatus.pending.name() + "';");
 
 			if (rs.next()) {
 				int taskId = rs.getInt("id");
@@ -103,6 +103,7 @@ public class DBMS_LiYi extends DBMS {
 				String taskOptions = rs.getString("model_options");
 				String taskOriginalOperation = rs.getString("type");
 				String modelType = rs.getString("model_type");
+				String equivContent = rs.getString("equiv_content");
 				TaskOperation taskOperation;
 				try {
 					taskOperation = TaskOperation.valueOf(taskOriginalOperation);
@@ -112,7 +113,7 @@ public class DBMS_LiYi extends DBMS {
 				rs.close();
 				switch (taskOperation) {
 					case build:
-						task = new BuildModelTask(userId, taskId, modelType, modelContent, taskOptions);
+						task = new BuildModelTask(userId, taskId, modelType, modelContent, taskOptions, equivContent);
 						break;
 					case checkFormula:
 					case analyze:
@@ -126,7 +127,7 @@ public class DBMS_LiYi extends DBMS {
 							}
 							formulae.add(new Formula(rs.getInt("formulaid"), content, rs.getString("formula_comment")));
 						}
-						task = new CheckModelTask(userId, taskId, modelType, modelContent, formulae, BackendEngine.timeOutInMinutes(), taskOptions);
+						task = new CheckModelTask(userId, taskId, modelType, modelContent, formulae, BackendEngine.timeOutInMinutes(), taskOptions, equivContent);
 						break;
 					default:
 						task = new InvalidModelTask(userId, taskId, taskOriginalOperation);

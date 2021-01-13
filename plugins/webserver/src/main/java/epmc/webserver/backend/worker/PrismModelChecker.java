@@ -58,7 +58,6 @@ public class PrismModelChecker extends Worker {
 	private final DataStore dataStore = DataStore.getDataStore();
 	private final CheckModelTask model;
 	private PrismModelMessageChannel channel;
-	private final String equivSepStr = "equivalence relations:";
 	String petl_solver = "minlp";
 	
 	EPMCRemote epmcServer;
@@ -226,8 +225,9 @@ public class PrismModelChecker extends Worker {
 					            byte[][] rawModel = null;
 					            if(model.getModelType().equals("mas"))
 								{
-									String modelstr = model.getModel().split(equivSepStr)[0];
-									String equivstr = model.getModel().split(equivSepStr)[1];
+									String modelstr = model.getModel();
+									String equivstr = model.getEquivContent();
+									System.out.println(equivstr);
 									
 									rawModel = new byte[2][];
 									rawModel[0] = modelstr.getBytes();

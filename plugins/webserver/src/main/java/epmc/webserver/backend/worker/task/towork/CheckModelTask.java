@@ -24,8 +24,8 @@ public class CheckModelTask extends ModelTask {
 	 * @param timeout the timeout for this task in minutes
 	 * @param options the options for this model
 	 */
-	public CheckModelTask(int userId, int taskId, String modelType, String modelContent, List<Formula> formulae, int timeout, String options) {
-		super(userId, taskId, TaskOperation.checkFormula, modelType, modelContent, options);
+	public CheckModelTask(int userId, int taskId, String modelType, String modelContent, List<Formula> formulae, int timeout, String options, String equivContent) {
+		super(userId, taskId, TaskOperation.checkFormula, modelType, modelContent, options, equivContent);
 		this.formulae = formulae;
 		this.timeout = timeout;
 	}

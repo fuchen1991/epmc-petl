@@ -17,7 +17,7 @@ public class InvalidModelTask extends ModelTask {
 	 * @param originalOperation the original operation
 	 */
 	public InvalidModelTask(int userId, int taskId, String originalOperation) {
-		super(userId, taskId, TaskOperation.invalidOperation, null, null, null);
+		super(userId, taskId, TaskOperation.invalidOperation, null, null, null, null);
 		this.originalOperation = originalOperation;
 	}
 	
