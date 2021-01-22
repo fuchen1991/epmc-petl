@@ -6,7 +6,6 @@ import java.rmi.registry.Registry;
 import epmc.error.EPMCException;
 import epmc.error.Problem;
 
-import epmc.main.options.OptionsEPMC;
 import epmc.modelchecker.CommandTask;
 import epmc.modelchecker.ModelChecker;
 import epmc.options.Options;
@@ -51,7 +50,6 @@ public class CommandTaskServer implements CommandTask {
         	System.out.println(e);
             ensure(false, ProblemWebserver.REMOTE);
         }
-
         CommandTask.super.executeInClientBeforeServer();
     }
     

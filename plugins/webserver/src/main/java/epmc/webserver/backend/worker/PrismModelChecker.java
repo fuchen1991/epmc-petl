@@ -79,7 +79,7 @@ public class PrismModelChecker extends Worker {
 //			dataStore.addWorkedTask(this, new FailedParseTask(model.getUserId(), model.getTaskId(), TaskOperation.checkFormula, ProblemsWebserver.PRISM_PARSER_NO_MODULE.toString(), 0, 0, null));
 			return;
 		}
-		final String host = "127.0.0.1";
+		final String host = "localhost";
 		final int portNumber = dataStore.getPortNumber();
 		if (portNumber < 1024) {
 			dataStore.addWorkedTask(this, new SystemFailureTask(model.getUserId(), model.getTaskId(), model.getOperation(), ProblemsWebserver.WORKER_MODEL_CHECKER_START_FAILED.toString()));
@@ -89,8 +89,6 @@ public class PrismModelChecker extends Worker {
 //		final Options options = UtilOptionsEPMC.newOptions();
 		final Options options = Options.get();
 
-		
-		
 		try {
 			String mod_options = model.getOptions();
 			if (mod_options == null) {
@@ -112,6 +110,17 @@ public class PrismModelChecker extends Worker {
 	        }
 	        
 	        petl_solver = props.getProperty("petl-solver");
+	        for (Object key : props.keySet())
+	        {
+	        	String opt = (String) key;
+	        	String valueStr = props.getProperty(opt);
+	        	if(valueStr != null && !valueStr.equals("null"))
+	        	{
+	        		options.set(opt, valueStr);
+	        	}
+	        }
+	        
+//	        
 //	        for (String option : options.getAllOptions().keySet()) {
 //	            String valueStr = props.getProperty(option);
 //	            if (valueStr == null) {
@@ -143,8 +152,8 @@ public class PrismModelChecker extends Worker {
 			command.add(BackendEngine.classpath());
 			command.add("epmc.main.EPMC");
 			command.add("server");
-			command.add("--plugin-list-file");
-			command.add("/home/fuchen/ePMC/webserver_plugin_list.txt");
+//			command.add("--plugin-list-file");
+//			command.add("/home/fuchen/ePMC/webserver_plugin_list.txt");
 			command.add("--server-port");
 			command.add(String.valueOf(portNumber));
 			command.add("--server-name");
@@ -156,7 +165,6 @@ public class PrismModelChecker extends Worker {
  			pb.redirectErrorStream(true);
 //			pb.redirectOutput(Redirect.appendTo(out));
  			pb.redirectOutput(out);
-			
 			setProcess(pb.start());
 			checkExitValue();
 			dataStore.releasePortNumber(portNumber);
@@ -169,12 +177,14 @@ public class PrismModelChecker extends Worker {
 			return;
 		} catch (IllegalThreadStateException ite) {}
 		try {
-			sleep(1000);
+			sleep(3000);
 			//just to give time to the server to be fully active
 		} catch (InterruptedException ie) {
 		}
-		
+
 		Map<RawProperty, Integer> propToId = new HashMap<RawProperty, Integer>(model.formulae().size());
+		System.out.println(host);
+		System.out.println(portNumber);
 		try {
 			epmcServer = (EPMCRemote)LocateRegistry.getRegistry(host, portNumber).lookup(name);
 		} catch (NotBoundException | RemoteException e) {
@@ -188,7 +198,6 @@ public class PrismModelChecker extends Worker {
 			dataStore.addWorkedTask(this, new FailedRuntimeTask(model.getUserId(), model.getTaskId(), model.getOperation(), ProblemsWebserver.WORKER_MODEL_CHECKER_CONNECTION_FAILED.toString(), t));
 			return;
 		}
-
 		try {
 			final RawProperties properties = new RawProperties();
 			List<Pair<Integer, RawProperty>> idToProp = new ArrayList<Pair<Integer, RawProperty>>(model.formulae().size());
@@ -216,12 +225,7 @@ public class PrismModelChecker extends Worker {
 					            for(int i=0;i<properties.getProperties().size();i++)
 					            {
 					            	propertiesStr += properties.getProperties().get(i).getDefinition() + "\n";
-					            	
-//					            	System.out.println(properties.getProperties().get(i).getDefinition() + " -------------");
 					            }
-					            System.out.println(model.getModelType());
-					            System.out.println(model.getModel());
-					            
 					            byte[][] rawModel = null;
 					            if(model.getModelType().equals("mas"))
 								{
@@ -241,7 +245,7 @@ public class PrismModelChecker extends Worker {
 								
 					            RawModelByteArray rb = new RawModelByteArray(rawModel, new byte[][]{propertiesStr.getBytes()});
 					            channel = new PrismModelMessageChannel(dataStore, model, propToId);
-					            result[0] = epmcServer.execute(rb, channel, name, CommandTaskCheck.IDENTIFIER, model.getModelType(),petl_solver);
+					            result[0] = epmcServer.execute(rb, channel,petl_solver,options);
 					            killProcess();
 							} catch (EPMCException e1) {
 								ime[0] = e1;
@@ -288,20 +292,16 @@ public class PrismModelChecker extends Worker {
 				if (result[0] != null) {
 					List<Pair<Integer, String>> values = new ArrayList<Pair<Integer, String>>(model.formulae().size());
 					for (Pair<Integer, RawProperty> idp : idToProp) {
-//						System.out.println(result[0].toString());
-//						System.out.println(idp.snd.toString());
-						
 						String res = "";
 						for(RawProperty proper : result[0].getProperties())
 						{
-//							System.out.println(proper.getDefinition());
 							if(idp.snd.getDefinition().startsWith(proper.getDefinition()))
 							{
 								res = result[0].getString(proper);
 								break;
 							}
 						}
-						System.out.println(res);
+//						System.out.println(res);
 						values.add(new Pair<Integer, String>(idp.fst, res));
 					}
 					resultingModel = new CompletedCheckModelTask(model.getUserId(), model.getTaskId(), TaskOperation.checkFormula, values);
@@ -358,7 +358,7 @@ public class PrismModelChecker extends Worker {
 			dataStore.releasePortNumber(portNumber);
 			
 			dataStore.addWorkedTask(this, resultingModel);
-			System.out.println("Backend finishes");
+//			System.out.println("Backend finishes");
 		}
 	}
 }

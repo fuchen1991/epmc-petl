@@ -40,7 +40,6 @@ public class PrismModelMessageChannel extends UnicastRemoteObject implements EPM
 		this.ds = ds;
 		this.task = task;
 		this.propToId = propToId;
-		System.out.println("After PrismModelMessageChannel");
 	}
 
 	private static MessageFormat formatter = new MessageFormat("");

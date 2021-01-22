@@ -22,7 +22,7 @@ public interface EPMCRemote extends Remote {
 //            throws RemoteException;
     
     public ModelCheckerResult execute
-    (RawModel model, EPMCMessageChannel channel, String serverName, String command, String inputType, String petlSolver)
+    (RawModel model, EPMCMessageChannel channel, String petlSolver, Options opt)
             throws RemoteException;
 
 }

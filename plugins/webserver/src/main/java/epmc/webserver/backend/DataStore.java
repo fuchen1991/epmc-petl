@@ -27,7 +27,7 @@ public class DataStore {
 		workedTask = new ArrayDeque<WorkedTask>();
 		workers = Collections.synchronizedSet(new HashSet<Worker>());
 		modelCheckerPorts = new ArrayDeque<Integer>(50000);
-		for (int i = 10000; i < 60000; i++) {
+		for (int i = 10011; i < 60000; i++) {
 				modelCheckerPorts.add(i);
 		}
 	}

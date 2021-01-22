@@ -110,12 +110,36 @@
       <systemPath>${project.basedir}/../command-check/target/epmc-command-check-0.jar</systemPath>
     </dependency>
     <dependency>
+      <groupId>epmc.propertysolver.petl</groupId>
+      <artifactId>epmc-propertysolver-petl</artifactId>
+      <version>0</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/../propertysolver-petl/target/epmc-propertysolver-petl-0.jar</systemPath>
+    </dependency>
+    <dependency>
+	    <groupId>com.sun.mail</groupId>
+	    <artifactId>javax.mail</artifactId>
+	    <version>1.5.0</version>
+	</dependency>
+	<dependency>
+	    <groupId>mysql</groupId>
+	    <artifactId>mysql-connector-java</artifactId>
+	    <version>5.1.33</version>
+	</dependency>
+    <!--  <dependency>
       <groupId>com.sun.mail</groupId>
       <artifactId>javax.mail</artifactId>
-      <version>4.0.0</version>
+      <version>1.5.0</version>
       <scope>system</scope>
       <systemPath>${project.basedir}/lib/javax.mail-1.5.0.jar</systemPath>
     </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.33</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/mysql-connector-java-5.1.33-bin.jar</systemPath>
+    </dependency>-->
   </dependencies>
   <!--  <dependencies>
     <dependency>
