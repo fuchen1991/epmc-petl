@@ -32,12 +32,13 @@
 	<classpathentry kind="lib" path="lib/javax.mail-1.5.0.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.33-bin.jar"/>
 	<classpathentry kind="lib" path="/home/fuchen/ePMC/lib/trove-141006211716.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/epmc-prism-format"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/epmc-expression-basic"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/epmc-jani-interaction"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/epmc-command-check"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/epmc"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/epmc-jani-model"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/epmc-propertysolver-petl"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/epmc-jani-model"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/epmc"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/epmc-command-check"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/epmc-jani-interaction"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/epmc-expression-basic"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/epmc-prism-format"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/epmc-qmc"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

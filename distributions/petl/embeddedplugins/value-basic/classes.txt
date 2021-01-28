@@ -1,2 +1,0 @@
-epmc.value.plugin.AfterOptionsCreationValueBasic
-epmc.value.plugin.BeforeModelCreationValueStandard

@@ -18,6 +18,9 @@ import epmc.error.Positional;
 import epmc.modelchecker.Model;
 import epmc.options.Option;
 import epmc.options.Options;
+//import epmc.petl.model.ModelMAS;
+import epmc.prism.model.ModelPRISM;
+//import epmc.qmc.model.ModelPRISMQMC;
 
 /**
  *
@@ -161,16 +164,16 @@ public final class WebToModelCheckerConnector {
         ParseResult pr;
         Model modelM = null;
         
-//        switch (modelType) {
-//        case "prism" : 
-//            modelM = new ModelPRISM();
+        switch (modelType) {
+        case "prism" : 
+            modelM = new ModelPRISM();
 //        case "prism-qmc" : 
 //        	modelM = new ModelPRISMQMC();
 //        case "mas" : 
 //        	modelM = new ModelMAS();
-//        default:
-//        	modelM = new ModelPRISM();
-//        }
+        default:
+        	modelM = new ModelPRISM();
+        }
 
         InputStream is = new ByteArrayInputStream(model.getBytes());
         try {
