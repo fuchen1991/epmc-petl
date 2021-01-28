@@ -1,0 +1,104 @@
+mdp
+
+const int N_ROWS=6;
+const int N_COLS=5;
+
+const int GOAL_ROW1=6;
+const int GOAL_COL1=5;
+
+const int GOAL_ROW2=6;
+const int GOAL_COL2=5;
+
+const int ROBOT1_ROW=1;
+const int ROBOT1_COL=1;
+
+const int ROBOT2_ROW=1;
+const int ROBOT2_COL=1;
+
+formula prob_dis1 = 
+	col1 = 3 & row1 = 4 ? 0.4755020113661885 : 
+	col1 = 1 & row1 = 3 ? 0.024376023560762405 : 
+	col1 = 5 & row1 = 5 ? 0.9497081767767668 : 
+	col1 = 4 & row1 = 2 ? 0.7021266371011734 : 
+	col1 = 5 & row1 = 4 ? 0.9107285801437683 : 
+	col1 = 3 & row1 = 5 ? 0.4749935809522867 : 
+	col1 = 5 & row1 = 3 ? 0.9197213770821691 : 
+	col1 = 2 & row1 = 2 ? 0.23887041257694364 : 
+	col1 = 3 & row1 = 2 ? 0.5034075286239386 : 
+	col1 = 5 & row1 = 2 ? 0.9199540922418237 : 
+	col1 = 1 & row1 = 5 ? 0.05538930557668209 : 
+	col1 = 1 & row1 = 4 ? 0.044584812596440315 : 
+	col1 = 4 & row1 = 4 ? 0.7054883688688278 : 
+	col1 = 2 & row1 = 3 ? 0.27436082251369953 : 
+	col1 = 4 & row1 = 5 ? 0.7212282549589872 : 
+	col1 = 4 & row1 = 3 ? 0.7279216069728136 : 
+	col1 = 3 & row1 = 3 ? 0.49078163877129555 : 
+	col1 = 1 & row1 = 2 ? 0.013172781793400645 : 
+	col1 = 2 & row1 = 4 ? 0.24275896279141307 : 
+	col1 = 2 & row1 = 5 ? 0.26499055325984955 : 
+	0
+	;
+
+formula prob_dis2 = 
+	col2 = 3 & row2 = 4 ? 0.4755020113661885 : 
+	col2 = 1 & row2 = 3 ? 0.024376023560762405 : 
+	col2 = 5 & row2 = 5 ? 0.9497081767767668 : 
+	col2 = 4 & row2 = 2 ? 0.7021266371011734 : 
+	col2 = 5 & row2 = 4 ? 0.9107285801437683 : 
+	col2 = 3 & row2 = 5 ? 0.4749935809522867 : 
+	col2 = 5 & row2 = 3 ? 0.9197213770821691 : 
+	col2 = 2 & row2 = 2 ? 0.23887041257694364 : 
+	col2 = 3 & row2 = 2 ? 0.5034075286239386 : 
+	col2 = 5 & row2 = 2 ? 0.9199540922418237 : 
+	col2 = 1 & row2 = 5 ? 0.05538930557668209 : 
+	col2 = 1 & row2 = 4 ? 0.044584812596440315 : 
+	col2 = 4 & row2 = 4 ? 0.7054883688688278 : 
+	col2 = 2 & row2 = 3 ? 0.27436082251369953 : 
+	col2 = 4 & row2 = 5 ? 0.7212282549589872 : 
+	col2 = 4 & row2 = 3 ? 0.7279216069728136 : 
+	col2 = 3 & row2 = 3 ? 0.49078163877129555 : 
+	col2 = 1 & row2 = 2 ? 0.013172781793400645 : 
+	col2 = 2 & row2 = 4 ? 0.24275896279141307 : 
+	col2 = 2 & row2 = 5 ? 0.26499055325984955 : 
+	0
+	;
+
+formula at_goal1 = (col1 = GOAL_COL1) & (row1 = GOAL_ROW1);
+
+formula at_goal2 = (col2 = GOAL_COL2) & (row2 = GOAL_ROW2);
+
+module robot1
+	row1 : [1..N_ROWS] init ROBOT1_ROW;
+	col1 : [1..N_COLS] init ROBOT1_COL;
+	disappeared1 : bool init false;
+	
+	[move_left1] at_goal1 | disappeared1 -> true;
+	[move_left1] !(at_goal1 | disappeared1) & col1 > 1 -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (col1'=col1-1);
+
+	[move_right1] at_goal1 | disappeared1 -> true;
+	[move_right1] !(at_goal1 | disappeared1) & col1 < N_COLS -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (col1'=col1+1);
+
+	[move_up1] at_goal1 | disappeared1 -> true;
+	[move_up1] !(at_goal1 | disappeared1) & row1 < N_ROWS -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (row1'=row1+1);
+
+	[move_down1] at_goal1 | disappeared1 -> true;
+	[move_down1] !(at_goal1 | disappeared1) & row1 > 1 -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (row1'=row1-1);
+endmodule
+
+module robot2
+	row2 : [1..N_ROWS] init ROBOT2_ROW;
+	col2 : [1..N_COLS] init ROBOT2_COL;
+	disappeared2 : bool init false;
+	
+	[move_left2] at_goal2 | disappeared2 -> true;
+	[move_left2] !(at_goal2 | disappeared2) & col2 > 1 -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (col2'=col2-1);
+
+	[move_right2] at_goal2 | disappeared2 -> true;
+	[move_right2] !(at_goal2 | disappeared2) & col2 < N_COLS -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (col2'=col2+1);
+
+	[move_up2] at_goal2 | disappeared2 -> true;
+	[move_up2] !(at_goal2 | disappeared2) & row2 < N_ROWS -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (row2'=row2+1);
+
+	[move_down2] at_goal2 | disappeared2 -> true;
+	[move_down2] !(at_goal2 | disappeared2) & row2 > 1 -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (row2'=row2-1);
+endmodule

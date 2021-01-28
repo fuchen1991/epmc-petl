@@ -1,0 +1,4 @@
+Pmax=? [F (at_goal1 | at_goal2)];
+Pmin=? [F (at_goal1 | at_goal2)];
+Pmax=? [G ( (D {robot1,robot2} (row1 != row2 | col1 != col2) ) & (disappeared1=false & disappeared2=false)) ];
+Pmax=? [G ( (K {robot1} (row1 != row2 | col1 != col2) ) & (disappeared1=false & disappeared2=false)) ]

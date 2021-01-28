@@ -5,6 +5,8 @@
 # ignore all "target" directories created by Maven
 target/
 
+*.class
+
 # ignore all generated libraries .dylib .so .o .a files
 *.[oa]
 *.so
@@ -15,3 +17,5 @@ target/
 # IntelliJ IDEA
 *.[ei]ml
 .idea/*
+
+webserver.config

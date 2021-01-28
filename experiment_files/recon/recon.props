@@ -1,0 +1,3 @@
+Pmax=? [ G (agentWater_x != agentCamera_x | agentWater_y != agentCamera_y) ];
+Pmin=? [ F (object_picture=2&object_water=2) ];
+Pmax=? [ (G (E {agentWater, agentCamera}  (agentWater_x != agentCamera_x | agentWater_y != agentCamera_y))) ];

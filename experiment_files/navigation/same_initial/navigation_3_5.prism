@@ -1,0 +1,74 @@
+mdp
+
+const int N_ROWS=3;
+const int N_COLS=5;
+
+const int GOAL_ROW1=3;
+const int GOAL_COL1=5;
+
+const int GOAL_ROW2=3;
+const int GOAL_COL2=5;
+
+const int ROBOT1_ROW=1;
+const int ROBOT1_COL=1;
+
+const int ROBOT2_ROW=1;
+const int ROBOT2_COL=1;
+
+formula prob_dis1 = 
+	col1 = 1 & row1 = 2 ? 0.0360226184129715 : 
+	col1 = 4 & row1 = 2 ? 0.6909389975480735 : 
+	col1 = 5 & row1 = 2 ? 0.916325646918267 : 
+	col1 = 2 & row1 = 2 ? 0.23629253543913364 : 
+	col1 = 3 & row1 = 2 ? 0.48970670998096466 : 
+	0
+	;
+
+formula prob_dis2 = 
+	col2 = 1 & row2 = 2 ? 0.0360226184129715 : 
+	col2 = 4 & row2 = 2 ? 0.6909389975480735 : 
+	col2 = 5 & row2 = 2 ? 0.916325646918267 : 
+	col2 = 2 & row2 = 2 ? 0.23629253543913364 : 
+	col2 = 3 & row2 = 2 ? 0.48970670998096466 : 
+	0
+	;
+
+formula at_goal1 = (col1 = GOAL_COL1) & (row1 = GOAL_ROW1);
+
+formula at_goal2 = (col2 = GOAL_COL2) & (row2 = GOAL_ROW2);
+
+module robot1
+	row1 : [1..N_ROWS] init ROBOT1_ROW;
+	col1 : [1..N_COLS] init ROBOT1_COL;
+	disappeared1 : bool init false;
+	
+	[move_left1] at_goal1 | disappeared1 -> true;
+	[move_left1] !(at_goal1 | disappeared1) & col1 > 1 -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (col1'=col1-1);
+
+	[move_right1] at_goal1 | disappeared1 -> true;
+	[move_right1] !(at_goal1 | disappeared1) & col1 < N_COLS -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (col1'=col1+1);
+
+	[move_up1] at_goal1 | disappeared1 -> true;
+	[move_up1] !(at_goal1 | disappeared1) & row1 < N_ROWS -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (row1'=row1+1);
+
+	[move_down1] at_goal1 | disappeared1 -> true;
+	[move_down1] !(at_goal1 | disappeared1) & row1 > 1 -> prob_dis1 : (disappeared1'=true) + (1-prob_dis1) : (row1'=row1-1);
+endmodule
+
+module robot2
+	row2 : [1..N_ROWS] init ROBOT2_ROW;
+	col2 : [1..N_COLS] init ROBOT2_COL;
+	disappeared2 : bool init false;
+	
+	[move_left2] at_goal2 | disappeared2 -> true;
+	[move_left2] !(at_goal2 | disappeared2) & col2 > 1 -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (col2'=col2-1);
+
+	[move_right2] at_goal2 | disappeared2 -> true;
+	[move_right2] !(at_goal2 | disappeared2) & col2 < N_COLS -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (col2'=col2+1);
+
+	[move_up2] at_goal2 | disappeared2 -> true;
+	[move_up2] !(at_goal2 | disappeared2) & row2 < N_ROWS -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (row2'=row2+1);
+
+	[move_down2] at_goal2 | disappeared2 -> true;
+	[move_down2] !(at_goal2 | disappeared2) & row2 > 1 -> prob_dis2 : (disappeared2'=true) + (1-prob_dis2) : (row2'=row2-1);
+endmodule
