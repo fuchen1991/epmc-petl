@@ -69,6 +69,28 @@ Other properties can be described by the PRISM language(http://www.prismmodelche
 
 You can find examples for these files under 'experiment_files'.
 
+The output will be like:
+```
+Assertions are disabled. In case of incorrect results or otherwise strange behaviour, please run the JVM with "-ea" parameter.
+Starting to parse PRISM model...
+Done parsing PRISM model
+Starting model checking...
+Analysing property Pmin=? [F (at_goal1 | at_goal2)]
+Starting to compute JANI explorer...
+Starting to build initial states of JANI explorer...
+Done building initial states of JANI explorer
+Done building JANI explorer
+Starting to build model...
+Building model done. 52 states. Time for model exploration: 0 seconds.
+Number of transitions:506
+Number of variables:100
+Number of constraints:268
+Call z3 to compute the minimal probability ...
+Time required by z3: 0 seconds
+Finished model checking. Time required: 1 seconds
+Pmin=? [F (at_goal1 | at_goal2)]: 0.0000000
+```
+
 
 To run the algorithm based on UCT, you can use the following command:
 ```
