@@ -10,7 +10,9 @@ All the implementation details related to PETL model checking are under "epmc-pe
 
 You can find the experiment files used in the paper under "experiment_files". 
 
-## Build EPMC-PETL
+## Get the runnable jar file
+You can download the runnable jar file from https://github.com/fuchen1991/epmc-petl/releases/tag/v1.0, or build it by yourself:
+
 1.Installing Dependencies: JDK 13.0+, Maven
  
 2. Enter the main directory, run
@@ -20,6 +22,8 @@ You can find the experiment files used in the paper under "experiment_files".
 Then you'll get our tool in an ALL-IN-ONE jar file epmc-petl.jar.
 
 ## Run
+To run EPMC-PETL, you need JDK 13.0+ installed.
+
 There are two algorithms for PETL model checking, to run the algorithm which reduces the problem to MINLP, you can use the following command:
 ```
 java -jar epmc-petl.jar check
