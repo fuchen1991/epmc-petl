@@ -196,7 +196,7 @@ Although there is  a "epmc-constraintsolver-smt-lib" plugin, it's not enough for
 The model checking algorithms are in the classes under epmc.propertysolver in the petl plugin.
 
 ## Contact
-Comments and feedback about any this project are very welcome. Please contact:
+Any comments and feedback about this project are very welcome. Please contact:
 
 Chen Fu
 
