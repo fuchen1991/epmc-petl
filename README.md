@@ -13,7 +13,7 @@ You can find the experiment files used in the paper under "experiment_files".
 ## Get the runnable jar file
 You can download the runnable jar file from https://github.com/fuchen1991/epmc-petl/releases/tag/v1.0, or build it by yourself:
 
-1.Installing Dependencies: JDK 13.0+, Maven
+1. Dependencies: JDK 13.0+, Maven
  
 2. Enter the main directory, run
  ```
