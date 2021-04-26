@@ -90,6 +90,7 @@ java -jar epmc-petl.jar check
 where `uct-time-limit` means  how much time the solver should use when exploring the model(in seconds);  `uct-depth-limit` means how many steps the solver should perform in the state space exploration;  `bvalue` means the coefficient of the bias parameter in the UCT formula between old and new state exploration;  `print-time-interval ` means the algorithm should print the current result of the UCT search(in seconds); `random-seed` means the random seed used to select unvisited successors: you can set these parameters as you wish, and the default value of  `random-seed` is 1000, and all other default values are 1. Again, you need to specify the paths of the files.
 
 ## Examples
+### petl-minlp
 Let's take https://github.com/fuchen1991/epmc-petl/blob/master/experiment_files/navigation/same_initial/navigation_3_4.prism as the model file, and https://github.com/fuchen1991/epmc-petl/blob/master/experiment_files/navigation/navigation_1.equiv as the equivalence relation file. For property, we check `Pmin=? [F (at_goal1 | at_goal2)]`. 
  
  In this model, 2 robots move in a grid, trying to get to their goals. Each grid cell makes the robots disappear with a different probability. The robots are totally independent, and we're computing the minimal probability of at least one robot finally reaching its goal.
@@ -128,6 +129,60 @@ Call z3 to compute the minimal probability ...
 Time required by z3: 2 seconds
 Finished model checking. Time required: 3 seconds
 Pmin=? [F (at_goal1 | at_goal2)]: 0.0000000
+```
+
+### petl-uct
+We use the same model and equivalence relation file in `petl-minlp`, and we check `Pmax=? [F (at_goal1 | at_goal2)]` this time.
+
+We run the following command:
+```
+java -jar epmc-petl.jar check
+--property-solver propositional-explicit,operator-explicit,pctl-explicit-next,petl-explicit-knowledge,petl-until-uct
+--prism-flatten false
+--model-input-type mas
+--property-input-type petl
+--uct-depth-limit 9
+--uct-time-limit 10
+--bvalue 9
+--print-time-interval 1
+--random-seed 1234
+--model-input-files navigation_3_4.prism navigation_1.equiv
+--property-input-files navigation.property
+```
+Then we get:
+```
+Running EPMC revision 81d3198e72cc538b29e2ad296e577c031a311301
+Assertions are disabled. In case of incorrect results or otherwise strange behaviour, please run the JVM with "-ea" parameter.
+Starting to parse PRISM model...
+Done parsing PRISM model
+Starting model checking...
+Analysing property Pmax=? [F (at_goal1 | at_goal2)]
+Starting to compute JANI explorer...
+Starting to build initial states of JANI explorer...
+Done building initial states of JANI explorer
+Done building JANI explorer
+Starting to build model...
+Building model done. 196 states. Time for model exploration: 0 seconds.
+Depth limit: 9
+Time limit: 10
+B value Coefficient: 9
+Random seed: 1234
+Start to rollout...
+Elapsed time: 1s Current result: 0.9987023709626734 rollouts: 3618 nodes: 1564141
+Elapsed time: 2s Current result: 0.9987023709626734 rollouts: 7756 nodes: 2609276
+Elapsed time: 3s Current result: 0.9987023709626734 rollouts: 11925 nodes: 3429760
+Elapsed time: 4s Current result: 0.9987023709626734 rollouts: 16522 nodes: 4209070
+Elapsed time: 5s Current result: 0.9987023709626734 rollouts: 21148 nodes: 4859114
+Elapsed time: 6s Current result: 0.9987023709626734 rollouts: 26667 nodes: 5547957
+Elapsed time: 7s Current result: 0.9987023709626734 rollouts: 31537 nodes: 6090595
+Elapsed time: 8s Current result: 0.9987023709626734 rollouts: 37067 nodes: 6628551
+Elapsed time: 9s Current result: 0.9987023709626734 rollouts: 42170 nodes: 7113543
+============================
+Final result: 0.9987023709626734
+Number of rollouts: 46404
+Number of nodes: 7455939
+Finished model checking. Time required: 10 seconds
+Pmax=? [F (at_goal1 | at_goal2)]: 0.9987024
 ```
 
 ## Tips for developing
