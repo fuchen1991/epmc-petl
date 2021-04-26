@@ -87,7 +87,7 @@ java -jar epmc-petl.jar check
 --model-input-files /path/to/your-model /path/to/your-equivalence-relation 
 --property-input-files /path/to/your-property
 ```
-where `uct-time-limit` means  how much time the solver should use when exploring the model(in seconds);  `uct-depth-limit` means how many steps the solver should perform in the state space exploration;  `bvalue` means the coefficient of the bias parameter in the UCT formula between old and new state exploration;  `print-time-interval ` means the algorithm should print the current result of the UCT search(in seconds); `random-seed` means the random seed used to select unvisited successors: you can set these parameters as you wish, and the default value of  `random-seed` is 1000, and all other default values are 1. Again, you need to specify the paths of the files.
+where `uct-time-limit` means  how much time the solver should use when exploring the model(in seconds);  `uct-depth-limit` means how many steps the solver should perform in the state space exploration;  `bvalue` means the coefficient of the bias parameter in the UCT formula between old and new state exploration;  `print-time-interval ` means how often the algorithm should print the current result of the UCT search(in seconds); `random-seed` means the random seed used to select unvisited successors: you can set these parameters as you wish, and the default value of  `random-seed` is 1000, and all other default values are 1. Again, you need to specify the paths of the files.
 
 ## Examples
 ### petl-minlp
