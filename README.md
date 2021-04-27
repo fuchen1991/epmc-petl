@@ -54,7 +54,7 @@ You can find examples for these files under 'experiment_files'.
 ## Run
 To run EPMC-PETL, you need JDK 13.0+ installed.
 
-For SMT solvers, we tested our tool with z3 4.6.0 (https://github.com/Z3Prover/z3/releases/tag/z3-4.6.0).
+For SMT solvers, we tested our tool with z3 4.6.0 (https://github.com/Z3Prover/z3/releases/tag/z3-4.6.0). If you use different versions of z3, or different smt solvers, the running time may be different.
 
 There are two algorithms for PETL model checking. To run the algorithm that reduces the problem to MINLP, you should use the following command:
 ```
@@ -87,7 +87,7 @@ java -jar epmc-petl.jar check
 --model-input-files /path/to/your-model /path/to/your-equivalence-relation 
 --property-input-files /path/to/your-property
 ```
-where `uct-time-limit` represents how much time the solver should use when exploring the model (in seconds);  `uct-depth-limit` stands for how many steps the solver should perform in the state space exploration;  `bvalue` is the coefficient of the bias parameter in the UCT formula between old and new state exploration;  `print-time-interval ` specifies how often the algorithm should print the current result of the UCT search (in seconds); and `random-seed` is the random seed used to select unvisited successors. You can set these parameters as you wish, and the default value of  `random-seed` is 1000, and all other default values are 1. Again, you need to specify the paths of the files.
+where `uct-time-limit` represents how much time the solver should use when exploring the model (in seconds);  `uct-depth-limit` stands for how many steps the solver should perform in the state space exploration;  `bvalue` is the coefficient of the bias parameter in the UCT formula between old and new state exploration, where setting it as 1 means  using the current expected reward of the old state as the bias parameter;  `print-time-interval ` specifies how often the algorithm should print the current result of the UCT search (in seconds); and `random-seed` is the random seed used to select unvisited successors. You can set these parameters as you wish, and the default value of  `random-seed` is 1000, and all other default values are 1. Again, you need to specify the paths of the files.
 
 ## Examples
 ### petl-minlp
