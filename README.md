@@ -133,7 +133,8 @@ Pmin=? [F (at_goal1 | at_goal2)]: 0.0000000
 Note that the time spent by Z3 on computing the minimal probability may vary a lot depending on the versions of Z3; in our experiments, Z3-4.6.0 usually takes a few seconds, Z3-4.8.8 will take over 130 seconds and Z3-4.8.10 can be even slower.
 
 ### petl-uct
-We use the same model and equivalence relation file in `petl-minlp`, and we check `Pmax=? [F (at_goal1 | at_goal2)]` this time.
+We use the same model and equivalence relation file for `petl-uct`, and we check `Pmax=? [F (at_goal1 | at_goal2)]` this time.
+We remark that computing the result for `Pmin=? [F (at_goal1 | at_goal2)]` with `petl-uct` is also possible and the computed result is `0.0000000`, matching the value computed with the exact solver `petl-minlp`.
 
 We run the following command:
 ```
@@ -185,7 +186,7 @@ Number of nodes: 7455939
 Finished model checking. Time required: 10 seconds
 Pmax=? [F (at_goal1 | at_goal2)]: 0.9987024
 ```
-
+We remark that 
 ## Tips for developing
 
 Although there is  a "epmc-constraintsolver-smt-lib" plugin, it's not enough for our MINLP problems. We change the classes "ConstraintSolverSMTLib", "InputWriter", and "OutputReader". And we  also copy "SMTLibOperator", "SMTLibResult", and "SMTLibVariable", because they are not public classes.  We use some other classes from  "epmc-constraintsolver-smt-lib", so  we need to add this plugin as a dependency. We call our new constraint solver as "smt-lib-petl".
