@@ -130,6 +130,7 @@ Time required by z3: 2 seconds
 Finished model checking. Time required: 3 seconds
 Pmin=? [F (at_goal1 | at_goal2)]: 0.0000000
 ```
+Note that the time spent by Z3 on computing the minimal probability may vary depending on the versions of Z3; in our experiments, Z3-4.6.0 usually takes a few seconds while Z3-4.8.8 can take over 130 seconds.
 
 ### petl-uct
 We use the same model and equivalence relation file in `petl-minlp`, and we check `Pmax=? [F (at_goal1 | at_goal2)]` this time.
