@@ -11,7 +11,7 @@ All the implementation details related to PETL model checking are under "epmc-pe
 You can find the experiment files used in the paper under "experiment_files". 
 
 ## Get the runnable jar file
-You can download the runnable jar file from https://github.com/fuchen1991/epmc-petl/releases/tag/v1.0, or build it by yourself:
+You can download the runnable jar file from https://github.com/fuchen1991/epmc-petl/releases/tag/v1.0.1, or build it by yourself:
 
 1. Dependencies: JDK 13.0+, Maven
  
@@ -196,6 +196,9 @@ Although there is  a "epmc-constraintsolver-smt-lib" plugin, it's not enough for
 
 
 The model checking algorithms are in the classes under epmc.propertysolver in the petl plugin.
+
+
+We found a bug in EPMC(ePMC/plugins/graph/src/main/java/epmc/graph/explicit/GraphBuilderExplorer.java) and fixed it for our petl plugin. This fix is not applied to the original EPMC project, because it needs the developers to confirm. So this file is different with the one in the original EPMC project.
 
 ## Contact
 Any comments and feedback about this project are very welcome. Please contact:
