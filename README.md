@@ -186,7 +186,7 @@ Number of nodes: 7455939
 Finished model checking. Time required: 10 seconds
 Pmax=? [F (at_goal1 | at_goal2)]: 0.9987024
 ```
-We remark that 
+
 ## Tips for developing
 
 Although there is  a "epmc-constraintsolver-smt-lib" plugin, it's not enough for our MINLP problems. We change the classes "ConstraintSolverSMTLib", "InputWriter", and "OutputReader". And we  also copy "SMTLibOperator", "SMTLibResult", and "SMTLibVariable", because they are not public classes.  We use some other classes from  "epmc-constraintsolver-smt-lib", so  we need to add this plugin as a dependency. We call our new constraint solver as "smt-lib-petl".
