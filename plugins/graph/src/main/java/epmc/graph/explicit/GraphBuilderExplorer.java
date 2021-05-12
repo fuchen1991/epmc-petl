@@ -274,7 +274,15 @@ public final class GraphBuilderExplorer {
         EdgePropertySparseNondet[] graphEdgePropertiesAlter = new EdgePropertySparseNondet[edgeProperties.size()];
         EdgeProperty[] graphEdgeProperties = new EdgeProperty[edgeProperties.size()];
         int edgePropNr = 0;
+        
+        //For fixing problems when having TRANSITION_LABEL and weight at the same time
+        int transitionLabelIndex = -1;
+        
         for (Object property : edgeProperties) {
+        	//For fixing problems when having TRANSITION_LABEL and weight at the same time
+        	if(property.equals(CommonProperties.TRANSITION_LABEL))
+        		transitionLabelIndex = edgePropNr;
+        	
             Type type = explorer.getEdgePropertyType(property);
             explorerEdgeProperties[edgePropNr] = explorer.getEdgeProperty(property);
             graphEdgePropertiesAlter[edgePropNr] = graphAlter.addSettableEdgeProperty(property, type);
@@ -309,6 +317,10 @@ public final class GraphBuilderExplorer {
                 graphAlter.prepareNondet(numISuccessors);
                 for (int interSuccNr = 0; interSuccNr < numISuccessors; interSuccNr++ ){
                     for (nodePropNr = 0; nodePropNr < graphEdgeProperties.length; nodePropNr++) {
+                    	//For fixing problems when having TRANSITION_LABEL and weight at the same time
+                    	if(transitionLabelIndex > -1 && transitionLabelIndex == nodePropNr)
+                    		continue;
+                    	
                         graphEdgePropertiesAlter[nodePropNr].setForNonDet(explorerEdgeProperties[nodePropNr].get(interSuccNr), interSuccNr);
                     }
                     int numberSucc = nodeStore.toNumber(explorer.getSuccessorNode(interSuccNr));
