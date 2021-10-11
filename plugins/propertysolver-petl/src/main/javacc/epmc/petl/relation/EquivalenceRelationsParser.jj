@@ -208,7 +208,7 @@ private void parseLabel()  :
 	  <NESTING_SEMICOLON_SEMICOLON>
 	  {
 	    er.addRelation(moduleName, value);
-	  }	)+
+	  }	)*
 	< EQUIV_END>
 }
 

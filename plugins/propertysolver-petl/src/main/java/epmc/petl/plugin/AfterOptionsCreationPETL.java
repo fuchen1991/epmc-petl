@@ -47,6 +47,7 @@ import epmc.propertysolver.OptionsUCT;
 import epmc.propertysolver.PropertySolverPETLUntilUCT;
 import epmc.propertysolver.PropertySolverExplicitKnowledge;
 import epmc.propertysolver.PropertySolverPETLUntilMINLP;
+import epmc.propertysolver.PropertySolverPETLUntilMonteCarlo;
 
 public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
     private final static String IDENTIFIER = "after-options-creation-petl";
@@ -79,6 +80,7 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         solvers.put(PropertySolverPETLUntilUCT.IDENTIFIER, PropertySolverPETLUntilUCT.class);
         solvers.put(PropertySolverExplicitKnowledge.IDENTIFIER, PropertySolverExplicitKnowledge.class);
         solvers.put(PropertySolverPETLUntilMINLP.IDENTIFIER, PropertySolverPETLUntilMINLP.class);
+        solvers.put(PropertySolverPETLUntilMonteCarlo.IDENTIFIER, PropertySolverPETLUntilMonteCarlo.class);
 
         Map<String,Class<?>> smtSolvers = options.get(OptionsConstraintsolver.CONSTRAINTSOLVER_SOLVER_CLASS);
         assert smtSolvers != null;
