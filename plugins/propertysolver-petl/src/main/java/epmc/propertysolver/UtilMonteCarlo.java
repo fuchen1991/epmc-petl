@@ -1,11 +1,12 @@
 package epmc.propertysolver;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
@@ -37,7 +38,7 @@ public class UtilMonteCarlo {
 	private static EquivalenceClasses equivalenceClasses;
 	private static Random random;
 	private static int seed = 1000;
-	private static int[] visitedTimes;
+	private static Map<Integer, MonteCarloNode> monterCarloNodes;
 	
 	private static void init(GraphExplicit gh, ModelChecker mc)
 	{
@@ -58,8 +59,9 @@ public class UtilMonteCarlo {
         seed = options.getInteger(OptionsUCT.RANDOM_SEED);
         random = new Random(seed);
         
+        monterCarloNodes = new HashMap<Integer, MonteCarloNode>();
+        
         System.out.println(graph.getNumNodes() + " nodes");
-        visitedTimes = new int[graph.getNumNodes()];
 	}
 	
 	public static double[] computeProbabilities(BitSet oneSet, BitSet zeroSet, boolean min, boolean negate, BitSet unKnown, StateSetExplicit computeForStates, GraphExplicit gh, ModelChecker mc)
@@ -105,113 +107,140 @@ public class UtilMonteCarlo {
 		int rolloutTimes = 0;
 		long elapsed = 0;
 		StopWatch watch = new StopWatch(true);
-		Set<Integer> visitedStates = new HashSet<Integer>();
-		visitedStates.add(state);
 		double result = 0.0;
 		if(min)
+			result = 1.0;
+		
+		while(watch.getTimeSeconds() < timeLimit)
 		{
-			while(watch.getTimeSeconds() < timeLimit)
+			if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 			{
-				
+				elapsed += printTimeInterval;
+				System.out.println("Elapsed time: " +  elapsed + "s Current result: " + result + " rollouts: " + rolloutTimes);
 			}
-		}
-		else
-		{
-			while(watch.getTimeSeconds() < timeLimit)
+			rolloutTimes += 1;
+			Map<Integer, RolloutNode> rolloutNodes = new HashMap<Integer, RolloutNode>();
+			
+			MonteCarloNode root = constructNode(state, true);
+			root.increaseVisitedTimes();
+			RolloutNode rollRoot = constructRolloutNode(state, rolloutNodes);
+			rolloutNodes.put(state, rollRoot);
+			Set<Integer> visited = new HashSet<Integer>();
+			visited.add(state);
+			
+			rollout(min, root, new ArrayList<FixedAction>(),visited,rolloutNodes);
+			
+			double res;
+			if(min)
 			{
-				if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
-				{
-					elapsed += printTimeInterval;
-					System.out.println("Elapsed time: " +  elapsed + "s Current result: " + result + " rollouts: " + rolloutTimes);
-				}
-				rolloutTimes += 1;
-				MonteCarloNode root = constructNode(state, true);
-				visitedTimes[state]++;
-//				root.increaseVisitedTimes();
-				Map<Integer, MonteCarloNode> visited = new HashMap<Integer, MonteCarloNode>();
-				visited.put(state, root);
-				rollout_max(root, new ArrayList<FixedAction>(),visited);
-				double res = 0;
-				if(root.getSuccessor_values().containsKey("1"))
-					res = root.getSuccessor_values().get("1");
-				
+				double r = rollRoot.getValue("0");
+				if(r == -1)
+					r = 0;
+				res = 1 - r;
+				if(res < result)
+					result = res;
+			}
+			else
+			{
+				res = rollRoot.getValue("1");
 				if(res > result)
 					result = res;
 			}
+			
+			//Because of loss of precision
+			BigDecimal num = new BigDecimal(result + "");
+			result = num.setScale(15, RoundingMode.HALF_EVEN).doubleValue();
+			
+//			Runtime runtime = Runtime.getRuntime();
+//			runtime.gc();
+//	        long memory = runtime.totalMemory() - runtime.freeMemory();
+//	        System.out.println("Used memory is megabytes: " + memory/(1024L*1024L));
+			
+//			System.out.println("Finish a rollout, the result of this rollout is " + res + " the current best result is " + result);
 		}
-		
+				
 		return result;
 	}
 	
-	private static void rollout_max(MonteCarloNode node, List<FixedAction> fixedActions, Map<Integer, MonteCarloNode> visited)
+	private static void rollout(boolean min, MonteCarloNode node, List<FixedAction> fixedActions, Set<Integer> visited, Map<Integer, RolloutNode> rolloutNodes)
 	{
+		RolloutNode nodeRoll = constructRolloutNode(node.getState(), rolloutNodes);
 		if(node.isDecision())
 		{
+//			System.out.println(node.getState() + " is decision node");
 			List<MonteCarloNode> successors = remainingSuccessors(node, fixedActions);
 			MonteCarloNode next = choseUnvisitedSucc(successors);
 			if(next == null)
 			{
-				next = chooseSuccByUCT(node, successors);
+				next = chooseSuccUCT(node, successors);
 			}
-			visitedTimes[next.getState()]++;
+			next.increaseVisitedTimes();
+//			System.out.println("choose next: " + next.getState() + "  " + next.getAction(node.getState()));
+			
 			addFixedActionInLocation(fixedActions, node, next);
-			rollout_max(next, fixedActions,visited);
-			node.addupSucc(next.getSuccessor_values(), 1);
-			node.reformulateSuccValues();
+			rollout(min, next, fixedActions,visited,rolloutNodes);
+			
+			RolloutNode nextRoll = constructRolloutNode(next.getState(), rolloutNodes);
+			nodeRoll.addupSucc(nextRoll.getSuccessor_values(), 1);
+			nodeRoll.reformulateSuccValues();
 		}
 		else
 		{
+//			System.out.println(node.getState() + " is Not decision node");
 			for(MonteCarloNode succ : node.getSuccessors())
 			{
-				visitedTimes[succ.getState()]++;
+//				System.out.println("Succ : " + succ.getState() + "  " + succ.getProbability(node.getState()) + " of state " + node.getState());
+				succ.increaseVisitedTimes();
+				RolloutNode succRoll = constructRolloutNode(succ.getState(), rolloutNodes);
 				if(oneStates.get(succ.getState()))
 				{
-					node.addSuccValue("1", succ.getProbability());
+//					System.out.println(succ.getState() + "  is one state");
+					nodeRoll.addSuccValue("1", succ.getProbability(node.getState()));
 				}
 				else if(zeroStates.get(succ.getState()))
 				{
-					node.addSuccValue("0", succ.getProbability());
+//					System.out.println(succ.getState() + "  is zero state");
+					nodeRoll.addSuccValue("0", succ.getProbability(node.getState()));
 				}
-				else if(visited.containsKey(succ.getState()))
+				else if(visited.contains(succ.getState()))
 				{
-					if(!succ.isFullExplored())
+//					System.out.println(succ.getState() + "  has been visited");
+					if(!succRoll.isFullExplored())
 					{
-						node.addSuccValue("x" + succ.getState(), succ.getProbability());
+						nodeRoll.addSuccValue("x" + succ.getState(), succ.getProbability(node.getState()));
 					}
 					else
 					{
-						Stack<Entry<String, Double>> values = new Stack<Entry<String, Double>>();
-						for(Entry<String, Double> entry : succ.getSuccessor_values().entrySet())
+						Stack<String> keys = new Stack<String>();
+						Stack<Double> pros = new Stack<Double>();
+						for(String k : succRoll.getSuccessor_values().keySet())
 						{
-							values.add(entry);
+							keys.push(k);
+							pros.push(succRoll.getValue(k)*succ.getProbability(node.getState()));
 						}
-						while(!values.empty())
+						while(!keys.empty())
 						{
-							Entry<String, Double> entry = values.pop();
-							String string = entry.getKey();
-							if(!string.startsWith("x"))
+							String key = keys.pop();
+							double value = pros.pop();
+							
+							if(!key.startsWith("x"))
 							{
-								node.addSuccValue(string, entry.getValue());
+								nodeRoll.addSuccValue(key, value);
 							}
 							else
 							{
-								int st = Integer.parseInt(entry.getKey().substring(1));
-								MonteCarloNode inter = visited.get(st);
-								if(!inter.isFullExplored())
+								int st = Integer.parseInt(key.substring(1));
+								RolloutNode interRoll = constructRolloutNode(st, rolloutNodes);
+								if(!interRoll.isFullExplored())
 								{
-									node.addSuccValue(string, entry.getValue());
+									nodeRoll.addSuccValue(key, value);
 								}
 								else
 								{
-									HashMap<String, Double> hm = new HashMap<String, Double>();
-									hm.putAll(inter.getSuccessor_values());
-									for(String key : hm.keySet())
+									for(String k : interRoll.getSuccessor_values().keySet())
 									{
-										hm.put(key, hm.get(key)*entry.getValue());
-									}
-									for(Entry<String, Double> en : hm.entrySet())
-									{
-										values.add(en);
+										keys.push(k);
+										pros.push(interRoll.getValue(k)*value);
 									}
 								}
 							}
@@ -220,34 +249,61 @@ public class UtilMonteCarlo {
 				}
 				else
 				{
-					visited.put(succ.getState(), succ);
-					rollout_max(succ, fixedActions,visited);
-					node.addupSucc(succ.getSuccessor_values(), succ.getProbability());
+					visited.add(succ.getState());
+//					System.out.println(succ.getState() + "  needs to rollout");
+					rollout(min, succ, fixedActions,visited,rolloutNodes);
+					nodeRoll.addupSucc(succRoll.getSuccessor_values(), succ.getProbability(node.getState()));
 				}
 			}
-			node.setFullExplored(true);
-		}
+			
+//			System.out.println("Finish all successors of " + node.getState());
+			//store the max reward across multi rollouts
+			if(min)
+			{
+				if(nodeRoll.getValue("0") > node.getCurrentReward())
+				{
+					node.setCurrentReward(nodeRoll.getValue("0"));
+				}
+			}
+			else
+			{
+				if(nodeRoll.getValue("1") > node.getCurrentReward())
+				{
+					node.setCurrentReward(nodeRoll.getValue("1"));
+				}
+			}
 
+			nodeRoll.setFullExplored(true);
+		}
 	}
 	
 	private static MonteCarloNode constructNode(int state, boolean isDecision) 
 	{
-		MonteCarloNode node = new MonteCarloNode(state,isDecision);
+		if(monterCarloNodes.containsKey(state))
+			return monterCarloNodes.get(state);
 		
+		MonteCarloNode node = new MonteCarloNode(state,isDecision);
+		monterCarloNodes.put(state, node);
 		return node;
+	}
+	
+	private static RolloutNode constructRolloutNode(int state, Map<Integer, RolloutNode> rolloutNodes) {
+		if(rolloutNodes.containsKey(state))
+			return rolloutNodes.get(state);
+		
+		RolloutNode roll = new RolloutNode(state);
+		rolloutNodes.put(state, roll);
+		return roll;
 	}
 	
 	private static List<MonteCarloNode> remainingSuccessors(MonteCarloNode node, List<FixedAction> fixedActions)
 	{
 		exploreSuccessors(node);
 		
-//		if(node.getSuccessors().size() == 1)
-//			return node.getSuccessors();
-		
 		Set<MonteCarloNode> remove = new HashSet<MonteCarloNode>();
 		for(MonteCarloNode succ : node.getSuccessors())
 		{
-			String action = succ.getAction();
+			String action = succ.getAction(node.getState());
 			int state = node.getState();
 			for(FixedAction fix : fixedActions)
 			{
@@ -274,28 +330,46 @@ public class UtilMonteCarlo {
 		return remaining;
 	}
 	
-	//optimize this to reuse some parts of the nodes
 	private static void exploreSuccessors(MonteCarloNode node)
 	{
 		int state = node.getState();
+		//this node has been explored before
+		if(node.isExplored())
+			return;
+		
 		for (int iter = 0; iter < graph.getNumSuccessors(state); iter++)
 		{
 			int succ = graph.getSuccessorNode(state, iter);
 			Action ac = actionLabel.getObject(state, iter);
             String nextAction = ac.getName();
             MonteCarloNode succNode = constructNode(succ, false);
-            succNode.setAction(nextAction);
+            succNode.setAction(state, nextAction);
+            
+//            if(succ == 163)
+//			{
+//				System.out.println(graph.getNumSuccessors(succ));
+//				for (int index = 0; index < graph.getNumSuccessors(succ); index++)
+//				{
+//					int dst = graph.getSuccessorNode(succ, index);
+//					double pro = ((ValueDouble) probability.get(succ, index)).getDouble();
+//					System.out.println("state " + dst + "  " + pro);
+//				}
+//				System.out.println("-------------------");
+////				System.exit(0);
+//			}
+            
             for (int index = 0; index < graph.getNumSuccessors(succ); index++)
     		{
     			int dst = graph.getSuccessorNode(succ, index);
     			double pro = ((ValueDouble) probability.get(succ, index)).getDouble();
     			MonteCarloNode dstNode = constructNode(dst, true);
-    			dstNode.setProbability(pro);
+    			dstNode.setProbability(succ, pro);
     			succNode.addSuccessor(dstNode);
     		}
             
             node.addSuccessor(succNode);
 		}
+		node.setExplored(true);
 	}
 	
 	private static MonteCarloNode choseUnvisitedSucc(List<MonteCarloNode> successors)
@@ -303,8 +377,7 @@ public class UtilMonteCarlo {
 		List<Integer> indexes = new ArrayList<Integer>();
 		for(MonteCarloNode succ : successors)
 		{
-//			if(succ.getVisitedTimes() == 0)
-			if(visitedTimes[succ.getState()] == 0)
+			if(succ.getVisitedTimes() == 0)
 			{
 				indexes.add(successors.indexOf(succ));
 			}
@@ -322,26 +395,34 @@ public class UtilMonteCarlo {
 		for(int i=0;i<successors.size();i++)
 		{
 			MonteCarloNode succ = successors.get(i);
-//			if(vt == -1 || succ.getVisitedTimes() > vt)
-			if(vt == -1 || visitedTimes[succ.getState()] < vt)
+			if(vt == -1 || succ.getVisitedTimes() < vt)
 			{
-//				vt = succ.getVisitedTimes();
-				vt = visitedTimes[succ.getState()];
+				vt = succ.getVisitedTimes();
 				index = i;
 			}
 		}
 		return successors.get(index);
 	}
 	
-	private static MonteCarloNode chooseSuccByUCT(MonteCarloNode node, List<MonteCarloNode> successors)
+	private static MonteCarloNode chooseSuccRandom(MonteCarloNode node, List<MonteCarloNode> successors)
+	{
+		int index = random.nextInt(successors.size());
+		return successors.get(index);
+	}
+	
+	
+	private static MonteCarloNode chooseSuccUCT(MonteCarloNode node, List<MonteCarloNode> successors)
 	{
 		double UCTValue = 0;
-		double B = estimateB(node)*10;
+		double B = estimateB(node) * 9;
+		if(B <= 0)
+			B = 1;
+		
 		int index = 0; 
 		for(int i=0;i<successors.size();i++)
 		{
 			MonteCarloNode succ = successors.get(i);
-			double currValue = B * Math.sqrt(Math.log(visitedTimes[node.getState()]) / visitedTimes[succ.getState()]) + estimateB(succ);
+			double currValue = B * Math.sqrt(Math.log(node.getVisitedTimes()) / succ.getVisitedTimes()) + estimateB(succ);
 			if(currValue > UCTValue || UCTValue == 0)
 			{
 				UCTValue = currValue;
@@ -353,20 +434,14 @@ public class UtilMonteCarlo {
 	
 	private static double estimateB(MonteCarloNode node)
 	{
-		double oneV = 0;
-		double zeroV = 0;
-		if(node.getSuccessor_values().containsKey("1"))
-			oneV = node.getSuccessor_values().get("1");
-		if(node.getSuccessor_values().containsKey("0"))
-			zeroV = node.getSuccessor_values().get("0");
-		
-		return oneV + (1-zeroV)/2;
+//		System.out.println(node.getCurrentReward());
+		return node.getCurrentReward();
 	}
 	
 	private static void addFixedActionInLocation(List<FixedAction> fixedActions, MonteCarloNode node, MonteCarloNode next)
 	{
-		String globalAction = next.getAction();
 		int state = node.getState();
+		String globalAction = next.getAction(state);
 		for(int i=0;i<players.size();i++)
 		{
 			FixedAction fa = new FixedAction(players.get(i), state, globalAction);

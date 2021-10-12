@@ -132,6 +132,10 @@ public class UtilUCT {
 		{
 			while(watch.getTimeSeconds() < timeLimit)
 			{
+				Runtime runtime = Runtime.getRuntime();
+				runtime.gc();
+		        long memory = runtime.totalMemory() - runtime.freeMemory();
+		        System.out.println("Used memory is megabytes: " + memory/(1024L*1024L));
 				if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 				{
 					elapsed += printTimeInterval;
@@ -142,6 +146,8 @@ public class UtilUCT {
 				rollout_max_onthefly(root, depthLimit, new ArrayList<FixedAction>(),min,visitedStates);
 				//if(root.getR() == 1.0)
 				//	break;
+				
+				
 			}
 		}
 		
