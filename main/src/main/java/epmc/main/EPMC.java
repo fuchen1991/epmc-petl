@@ -43,6 +43,9 @@ public final class EPMC {
      */
     public static void main(String[] args) {
         assert args != null;
+        long beforeUsedMem=Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
+        System.out.println("Initial memory usage: " + beforeUsedMem/1024/1024 + " MB");
+        
         for (String arg : args) {
             assert arg != null;
         }

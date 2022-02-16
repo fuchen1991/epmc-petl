@@ -379,7 +379,10 @@ public class UtilConstraints {
     	
     	StopWatch watch = new StopWatch(true);
     	System.out.println("Call z3 to compute the minimal probability ...");
+    	
+    	PropertySolverPETLUntilMINLP.countMemoryUsage();
     	ConstraintSolverResult result = solver.solve();
+    	PropertySolverPETLUntilMINLP.countMemoryUsage();
     	System.out.println("Time required by z3: " + watch.getTimeSeconds() + " seconds");
     	
     	solver.setObjective(null);

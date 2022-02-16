@@ -66,6 +66,16 @@ final class OutputReader {
                 continue;
             }
 
+            if (line.contains(":"))
+            {
+            	if (line.contains("max-memory"))
+            	{
+            		String max = line.substring(12).trim();
+            		System.out.println("Max memory usage of z3: " + max + " MB");
+            	}
+            	continue;
+            }
+            
             SExpression parsed = parser.parse(line);
             line = line.trim();
             if (parsed.isAtomic() && parsed.getAtomic().equals(SAT)) {
