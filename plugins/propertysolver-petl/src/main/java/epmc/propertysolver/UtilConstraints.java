@@ -228,6 +228,7 @@ public class UtilConstraints {
         	solver.addConstraint(UtilPETL.parseExpression(builder.toString()));
         }
         
+        PropertySolverPETLUntilMINLP.countMemoryUsage();
         return solver;
 	}
 	
@@ -369,7 +370,10 @@ public class UtilConstraints {
         	}
         	solver.addConstraint(UtilPETL.parseExpression(builder.toString()));
         	solver.addConstraint(UtilPETL.parseExpression(builderForSec.toString()));
-        }   
+        	
+        	PropertySolverPETLUntilMINLP.countMemoryUsage();
+        } 
+        PropertySolverPETLUntilMINLP.countMemoryUsage();
 	}
 	
 	private static double compuetMinProbability(ConstraintSolver solver, int state)
@@ -402,7 +406,9 @@ public class UtilConstraints {
     	
     	StopWatch watch = new StopWatch(true);
     	System.out.println("Call z3 to compute the maximal probability ...");
+    	PropertySolverPETLUntilMINLP.countMemoryUsage();
     	ConstraintSolverResult result = solver.solve();
+    	PropertySolverPETLUntilMINLP.countMemoryUsage();
     	System.out.println("Time required by z3: " + watch.getTimeSeconds() + " seconds");
     	
     	solver.setObjective(null);
@@ -482,6 +488,7 @@ public class UtilConstraints {
 				}
 			}
 		}
+		PropertySolverPETLUntilMINLP.countMemoryUsage();
 		return resultValue;
 	}
 }

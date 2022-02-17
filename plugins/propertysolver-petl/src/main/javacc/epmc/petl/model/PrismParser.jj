@@ -784,7 +784,7 @@ private Expression parseInvariantDeclaration()  :
 private void parseRewards(List<RewardStructure> rewards)  :
 {
 	Expression id = null;
-	Expression label;
+	String label;
 	Expression guard;
 	Expression value;
 	List<Reward> locRew = new ArrayList<Reward>();
@@ -814,18 +814,23 @@ private void parseRewards(List<RewardStructure> rewards)  :
 		}
 	}
 	(
-		{ label = null; }
+		{ label = ""; }
 		(
 			<LBRACKET>
-			{ label = new ExpressionIdentifierStandard.Builder()
-					.setName("")
-					.build(); }
+//			{ label = new ExpressionIdentifierStandard.Builder()
+//					.setName("")
+//					.build(); }
 			( 
 				t = <IDENTIFIER>
-				{ label = new ExpressionIdentifierStandard.Builder()
-					.setName(t.toString())
-					.build(); }
-			)?
+				{ label += t.toString();}
+				(				  < COMMA>
+				  { label += ",";}
+				)?
+				{ //label = new ExpressionIdentifierStandard.Builder()
+					//.setName(t.toString())
+					//.build();
+					 }
+			)*
 			<RBRACKET>
 		)?
 		{ token_source.SwitchTo(NESTING_COLON); }
@@ -850,10 +855,10 @@ private void parseRewards(List<RewardStructure> rewards)  :
 		value = parseExpSemicolon()
 		<NESTING_SEMICOLON_SEMICOLON>
 		{ 
-			if (label == null) {
+			if (label.length() == 0) {
 				locRew.add(new StateReward(guard, value, null));
 			} else {
-				locRew.add(new TransitionReward(label.toString(), guard, value, null));
+				locRew.add(new TransitionReward(label, guard, value, null));
 			}
 		}
 	)+

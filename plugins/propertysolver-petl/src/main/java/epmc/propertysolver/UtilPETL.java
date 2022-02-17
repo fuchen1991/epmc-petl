@@ -1,13 +1,18 @@
 package epmc.propertysolver;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import epmc.expression.Expression;
 import epmc.expression.standard.ExpressionIdentifier;
@@ -26,6 +31,7 @@ import epmc.modelchecker.ModelChecker;
 import epmc.petl.model.EquivalenceClasses;
 import epmc.petl.model.ExpressionKnowledge;
 import epmc.petl.model.KnowledgeType;
+import epmc.prism.expression.PrismExpressionParser;
 import epmc.prism.model.PropertyPRISM;
 import epmc.util.BitSet;
 import epmc.util.UtilBitSet;
@@ -368,8 +374,8 @@ public class UtilPETL {
 	
 	public static Expression parseExpression(String exp)
 	{
-		//System.out.println(exp.length());
-		InputStream stream = new ByteArrayInputStream(exp.getBytes());
-        return new PropertyPRISM().parseExpression(exp.toString(), stream);
+		InputStream stream = new ByteArrayInputStream(exp.getBytes(StandardCharsets.UTF_8));
+        PrismExpressionParser parser = new PrismExpressionParser(stream);
+        return parser.parseExpression(exp, 1, 1, exp);
 	}
 }
