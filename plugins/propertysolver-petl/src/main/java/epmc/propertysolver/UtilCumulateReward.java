@@ -1,8 +1,10 @@
 package epmc.propertysolver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -17,11 +19,10 @@ import epmc.options.Options;
 import epmc.petl.model.EquivalenceClasses;
 import epmc.petl.model.ModelMAS;
 import epmc.prism.model.Module;
-import epmc.util.BitSet;
 import epmc.util.StopWatch;
 import epmc.value.ValueDouble;
 
-public class UtilInstantReward {
+public class UtilCumulateReward {
 
 	private static int timeLimit = 1;
 	private static int bValueCoefficient = 1;
@@ -37,12 +38,14 @@ public class UtilInstantReward {
 	private static int seed = 1000;
 	private static int constructedNode = 0;
 	private static NodeProperty stateReward;
+	private static EdgeProperty transReward;
 	
-	private static void init(GraphExplicit gh, ModelChecker mc, NodeProperty sr)
+	private static void init(GraphExplicit gh, ModelChecker mc, NodeProperty sr, EdgeProperty tr)
 	{
 		modelChecker = mc;
 		graph = gh;
 		stateReward = sr;
+		transReward = tr;
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
 		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
@@ -60,15 +63,15 @@ public class UtilInstantReward {
         random = new Random(seed);
 	}
 	
-	public static double[] computeProbabilities(boolean min, StateSetExplicit computeForStates, GraphExplicit gh, ModelChecker mc, int k, NodeProperty sr)
+	public static double[] computeProbabilities(boolean min, StateSetExplicit computeForStates, GraphExplicit gh, ModelChecker mc, int k, NodeProperty sr, EdgeProperty tr)
 	{
-		init(gh,mc,sr);
+		init(gh,mc,sr,tr);
 		
 		int size = computeForStates.size();
 		double[] resultValue = new double[size];
 		for(int i=0;i<size;i++)
 		{
-			PropertySolverPOSGInstantReward.countMemoryUsage();
+			PropertySolverPOSGCumulateReward.countMemoryUsage();
 			int state = computeForStates.getExplicitIthState(i);
 			resultValue[i] = exploreWhenUCT(state, min,k);
 		}
@@ -77,6 +80,9 @@ public class UtilInstantReward {
 	
 	private static double exploreWhenUCT(int state, boolean min, int k)
 	{
+		if(k == 0)
+			return 0;
+		
 		System.out.println("Time limit: " + timeLimit);
 		System.out.println("B value Coefficient: " + bValueCoefficient);
 		System.out.println("Random seed: " + seed);
@@ -91,7 +97,7 @@ public class UtilInstantReward {
 		{
 			if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 			{
-				PropertySolverPOSGInstantReward.countMemoryUsage();
+				PropertySolverPOSGCumulateReward.countMemoryUsage();
 				elapsed += printTimeInterval;
 				System.out.println("Elapsed time: " +  elapsed + "s Current result: " + root.getR()+ " rollouts: " + rolloutTimes + " nodes: " + constructedNode);
 			}
@@ -110,10 +116,9 @@ public class UtilInstantReward {
 
 	private static double rollout_onthefly(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
 	{
-		if(depth == 0)
-			return ValueDouble.as(stateReward.get(node.getState())).getDouble();
-		double res = 0.0;
+		double succReward = 0.0;
 		UCTNode next = null;
+		double currentReward = 0;
 		if(node.isDecision())
 		{
 			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
@@ -124,7 +129,15 @@ public class UtilInstantReward {
 			}
 			next.increaseVisitedTimes();
 			addFixedActionInLocation(fixedActions, node, next);
-			res = rollout_onthefly(next,depth, fixedActions,min);
+			double srw = ValueDouble.as(stateReward.get(node.getState())).getDouble();
+			//every index of successor has the same transition reward
+			double trw = ValueDouble.as(transReward.get(next.getState(), 0)).getDouble();
+			currentReward = srw + trw;
+			if(depth == 1)
+			{
+				return currentReward;
+			}
+			succReward = rollout_onthefly(next,depth, fixedActions,min);
 		}
 		else
 		{
@@ -134,15 +147,16 @@ public class UtilInstantReward {
 					exploreSearchTreeOnTheFly(succ, min);
 				succ.increaseVisitedTimes();
 				double rs = succ.getProbability() * rollout_onthefly(succ, depth-1, fixedActions,min);
-				res += rs;
+				succReward += rs;
 			}
 		}
-		if(node.getVisitedTimes() == 0 || (!min && res > node.getR()) || (min && res < node.getR()))
+		double rewardOfNode = succReward + currentReward;
+		if(node.getVisitedTimes() == 0 || (!min && rewardOfNode > node.getR()) || (min && rewardOfNode < node.getR()))
 		{
-			node.setR(res);
+			node.setR(rewardOfNode);
 		}
 		
-		return res;
+		return rewardOfNode;
 	}
 	
 	private static void addFixedActionInLocation(List<FixedAction> fixedActions, UCTNode node, UCTNode next)

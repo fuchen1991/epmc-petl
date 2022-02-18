@@ -1,8 +1,10 @@
 package epmc.propertysolver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -21,7 +23,7 @@ import epmc.util.BitSet;
 import epmc.util.StopWatch;
 import epmc.value.ValueDouble;
 
-public class UtilInstantReward {
+public class UtilReachReward {
 
 	private static int timeLimit = 1;
 	private static int bValueCoefficient = 1;
@@ -37,12 +39,17 @@ public class UtilInstantReward {
 	private static int seed = 1000;
 	private static int constructedNode = 0;
 	private static NodeProperty stateReward;
+	private static EdgeProperty transReward;
+	private static BitSet reachSet;
+	private static BitSet canNotReachSet;
+	private static boolean InfinityFound = false;
 	
-	private static void init(GraphExplicit gh, ModelChecker mc, NodeProperty sr)
+	private static void init(GraphExplicit gh, ModelChecker mc, NodeProperty sr, EdgeProperty tr)
 	{
 		modelChecker = mc;
 		graph = gh;
 		stateReward = sr;
+		transReward = tr;
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
 		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
@@ -60,27 +67,41 @@ public class UtilInstantReward {
         random = new Random(seed);
 	}
 	
-	public static double[] computeProbabilities(boolean min, StateSetExplicit computeForStates, GraphExplicit gh, ModelChecker mc, int k, NodeProperty sr)
+	public static double[] computeProbabilities(BitSet unKnown, BitSet rs, BitSet cnrs, boolean min, StateSetExplicit computeForStates, GraphExplicit gh, ModelChecker mc, NodeProperty sr, EdgeProperty tr)
 	{
-		init(gh,mc,sr);
+		init(gh,mc,sr,tr);
+		reachSet = rs;
+		canNotReachSet = cnrs;
 		
 		int size = computeForStates.size();
 		double[] resultValue = new double[size];
 		for(int i=0;i<size;i++)
 		{
-			PropertySolverPOSGInstantReward.countMemoryUsage();
+			PropertySolverPOSGReachReward.countMemoryUsage();
 			int state = computeForStates.getExplicitIthState(i);
-			resultValue[i] = exploreWhenUCT(state, min,k);
+			if(reachSet.get(state))
+			{
+				resultValue[i] = 0.0;
+			}
+			else if(canNotReachSet.get(state))
+			{
+				resultValue[i] = Double.POSITIVE_INFINITY;
+			}
+			else
+			{
+				double result = exploreWhenUCT(state, min);
+				resultValue[i] = result;
+			}
 		}
 		return resultValue;
 	}
 	
-	private static double exploreWhenUCT(int state, boolean min, int k)
+	private static double exploreWhenUCT(int state, boolean min)
 	{
 		System.out.println("Time limit: " + timeLimit);
 		System.out.println("B value Coefficient: " + bValueCoefficient);
 		System.out.println("Random seed: " + seed);
-		UCTNode root = constructNode(state, emptyAction, true);
+		UCTNode root = constructNode(state, emptyAction, true, min);
 		exploreSearchTreeOnTheFly(root, min);
 		System.out.println("Start to rollout...");
 		int rolloutTimes = 0;
@@ -91,13 +112,20 @@ public class UtilInstantReward {
 		{
 			if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 			{
-				PropertySolverPOSGInstantReward.countMemoryUsage();
+				PropertySolverPOSGReachReward.countMemoryUsage();
 				elapsed += printTimeInterval;
 				System.out.println("Elapsed time: " +  elapsed + "s Current result: " + root.getR()+ " rollouts: " + rolloutTimes + " nodes: " + constructedNode);
 			}
 			root.increaseVisitedTimes();
 			rolloutTimes += 1;
-			rollout_onthefly(root, k, new ArrayList<FixedAction>(),min);
+			rollout_onthefly(root, new ArrayList<FixedAction>(),min);
+			if(!min && InfinityFound)
+			{
+				System.out.println("INFINITY found. Stop rollouts.");
+				root.setR(Double.POSITIVE_INFINITY);
+				break;
+			}
+			InfinityFound = false;
 		}
 		
 		double final_res = root.getR();
@@ -108,12 +136,14 @@ public class UtilInstantReward {
 		return final_res;
 	}
 
-	private static double rollout_onthefly(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
+	private static double rollout_onthefly(UCTNode node, List<FixedAction> fixedActions, boolean min)
 	{
-		if(depth == 0)
-			return ValueDouble.as(stateReward.get(node.getState())).getDouble();
-		double res = 0.0;
+		if(InfinityFound)
+			return 0;
+		
+		double succReward = 0.0;
 		UCTNode next = null;
+		double currentReward = 0;
 		if(node.isDecision())
 		{
 			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
@@ -124,25 +154,42 @@ public class UtilInstantReward {
 			}
 			next.increaseVisitedTimes();
 			addFixedActionInLocation(fixedActions, node, next);
-			res = rollout_onthefly(next,depth, fixedActions,min);
+			double srw = ValueDouble.as(stateReward.get(node.getState())).getDouble();
+			//every index of successor has the same transition reward
+			double trw = ValueDouble.as(transReward.get(next.getState(), 0)).getDouble();
+			currentReward = srw + trw;
+			succReward = rollout_onthefly(next, fixedActions,min);
 		}
 		else
 		{
 			for(UCTNode succ : node.getSuccessors())
 			{
-				if(depth > 0 && !succ.isInitialized())
-					exploreSearchTreeOnTheFly(succ, min);
-				succ.increaseVisitedTimes();
-				double rs = succ.getProbability() * rollout_onthefly(succ, depth-1, fixedActions,min);
-				res += rs;
+				if(canNotReachSet.get(succ.getState()))
+				{
+					InfinityFound = true;
+					break;
+				}
+				else if(reachSet.get(succ.getState()))
+				{
+					continue;
+				}
+				else
+				{
+					if(!succ.isInitialized())
+						exploreSearchTreeOnTheFly(succ, min);
+					succ.increaseVisitedTimes();
+					double rs = succ.getProbability() * rollout_onthefly(succ, fixedActions,min);
+					succReward += rs;
+				}
 			}
 		}
-		if(node.getVisitedTimes() == 0 || (!min && res > node.getR()) || (min && res < node.getR()))
+		double rewardOfNode = succReward + currentReward;
+		if(node.getVisitedTimes() == 0 || (!min && rewardOfNode > node.getR()) || (min && rewardOfNode < node.getR()))
 		{
-			node.setR(res);
+			node.setR(rewardOfNode);
 		}
 		
-		return res;
+		return rewardOfNode;
 	}
 	
 	private static void addFixedActionInLocation(List<FixedAction> fixedActions, UCTNode node, UCTNode next)
@@ -239,12 +286,15 @@ public class UtilInstantReward {
 		return res * bValueCoefficient;
 	}
 	
-	private static UCTNode constructNode(int state, String action, boolean isDecision)
+	private static UCTNode constructNode(int state, String action, boolean isDecision, boolean min)
 	{
 		constructedNode += 1;
 		UCTNode node = new UCTNode(state, action, isDecision);
 		node.setVisitedTimes(0);
-		node.setR(0.0);
+		if(min)
+			node.setR(Double.POSITIVE_INFINITY);
+		else
+			node.setR(0);
 		
 		return node;
 	}
@@ -257,12 +307,12 @@ public class UtilInstantReward {
 			int succ = graph.getSuccessorNode(state, iter);
 			Action ac = actionLabel.getObject(state, iter);
             String nextAction = ac.getName();
-            UCTNode succNode = constructNode(succ, nextAction, false);
+            UCTNode succNode = constructNode(succ, nextAction, false, min);
             for (int index = 0; index < graph.getNumSuccessors(succ); index++)
     		{
     			int dst = graph.getSuccessorNode(succ, index);
     			double pro = ((ValueDouble) probability.get(succ, index)).getDouble();
-    			UCTNode dstNode = constructNode(dst, emptyAction, true);
+    			UCTNode dstNode = constructNode(dst, emptyAction, true, min);
     			dstNode.setProbability(pro);
     			succNode.addSuccessor(dstNode);
     		}
