@@ -16,7 +16,7 @@ public class UCTNode {
 	private double R;
 	private UCTNode bestSucc;
 	private boolean isInitialized = false;
-	private Map<List<FixedAction>, Double> fixedActionsToR;
+//	private Map<List<FixedAction>, Double> fixedActionsToR;
 
 	public boolean isInitialized() {
 		return isInitialized;
@@ -38,31 +38,31 @@ public class UCTNode {
 		this.action = action;
 		this.isDecision = isDecision;
 		successors = new ArrayList<UCTNode>();
-		fixedActionsToR = new HashMap<List<FixedAction>, Double>();
+//		fixedActionsToR = new HashMap<List<FixedAction>, Double>();
 	}
 	
-	public double getRByFixedActions(List<FixedAction> fa) {
-		if(fixedActionsToR.containsKey(fa))
-			return fixedActionsToR.get(fa);
-		else
-			return -1;
-	}
-
-	public void setRByFixedActions(List<FixedAction> fa, double r) {
-		this.fixedActionsToR.put(fa, r);
-	}
-
-	public double reComputeR()
-	{
-		for(double res : fixedActionsToR.values())
-		{
-			if(res > this.R)
-			{
-				this.R = res;
-			}
-		}
-		return this.R;
-	}
+//	public double getRByFixedActions(List<FixedAction> fa) {
+//		if(fixedActionsToR.containsKey(fa))
+//			return fixedActionsToR.get(fa);
+//		else
+//			return -1;
+//	}
+//
+//	public void setRByFixedActions(List<FixedAction> fa, double r) {
+//		this.fixedActionsToR.put(fa, r);
+//	}
+//
+//	public double reComputeR()
+//	{
+//		for(double res : fixedActionsToR.values())
+//		{
+//			if(res > this.R)
+//			{
+//				this.R = res;
+//			}
+//		}
+//		return this.R;
+//	}
 	
 	public void increaseVisitedTimes()
 	{

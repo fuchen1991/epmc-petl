@@ -150,13 +150,6 @@ public class UtilMonteCarlo {
 			//Because of loss of precision
 			BigDecimal num = new BigDecimal(result + "");
 			result = num.setScale(15, RoundingMode.HALF_EVEN).doubleValue();
-			
-//			Runtime runtime = Runtime.getRuntime();
-//			runtime.gc();
-//	        long memory = runtime.totalMemory() - runtime.freeMemory();
-//	        System.out.println("Used memory is megabytes: " + memory/(1024L*1024L));
-			
-//			System.out.println("Finish a rollout, the result of this rollout is " + res + " the current best result is " + result);
 		}
 				
 		return result;
