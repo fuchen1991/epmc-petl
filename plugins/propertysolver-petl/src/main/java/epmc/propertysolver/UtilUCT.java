@@ -94,6 +94,8 @@ public class UtilUCT {
 				else
 					resultValue[i] = result;
 			}
+			
+			PropertySolverPETLUntilUCT.countMemoryUsage();
 		}
 		return resultValue;
 	}
@@ -118,6 +120,7 @@ public class UtilUCT {
 			{
 				if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 				{
+					PropertySolverPETLUntilUCT.countMemoryUsage();
 					elapsed += printTimeInterval;
 					System.out.println("Elapsed time: " +  elapsed + "s Current result: " + (1 - root.getR()) + " rollouts: " + rolloutTimes + " nodes: " + constructedNode);
 				}
@@ -138,6 +141,7 @@ public class UtilUCT {
 		        System.out.println("Used memory is megabytes: " + memory/(1024L*1024L));
 				if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 				{
+					PropertySolverPETLUntilUCT.countMemoryUsage();
 					elapsed += printTimeInterval;
 					System.out.println("Elapsed time: " +  elapsed + "s Current result: " + root.getR()+ " rollouts: " + rolloutTimes + " nodes: " + constructedNode);
 				}

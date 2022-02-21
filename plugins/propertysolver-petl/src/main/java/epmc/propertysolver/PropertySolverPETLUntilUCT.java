@@ -52,6 +52,7 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
     private StateSetExplicit computeForStates;
     private Expression property;
     private StateSet forStates;
+    static long maxMemoryUsage =  0;
 
 	@Override
 	public String getIdentifier() {
@@ -143,6 +144,7 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
             required.addAll(modelChecker.getRequiredNodeProperties(inner, allStates));
         }
         
+        System.out.println("Max memory usage:" + maxMemoryUsage + " MB");
         return required;
 	}
 
@@ -164,6 +166,8 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
         ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
         Expression quantifiedProp = propertyQuantifier.getQuantified();
         DirType dirType = ExpressionQuantifier.computeQuantifierDirType(propertyQuantifier);
+        
+        countMemoryUsage();
         
         StateMap result = doSolve(quantifiedProp, forStates, dirType.isMin());
         if (!propertyQuantifier.getCompareType().isIs()) {
@@ -231,6 +235,7 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
         allStates.close();
         this.computeForStates = (StateSetExplicit) states;
 
+        countMemoryUsage();
         return solve(propertyTemporal, min, negate, innerResult1, innerResult2);
 	}
 	
@@ -265,8 +270,11 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
             }
         }
         BitSet unKnown = UtilPETL.getUnKnownStates(oneSet, zeroSet, graph);
+        
+        countMemoryUsage();
         double[] resultValue = UtilUCT.computeProbabilities(oneSet, zeroSet, min, negate,unKnown, computeForStates, graph,modelChecker);
         
+        countMemoryUsage();
         Type type = TypeDouble.get();
         ValueArray resultValues = UtilValue.newArray(type.getTypeArray(), computeForStates.size());
         for (int stateNr = 0; stateNr < computeForStates.size(); stateNr++) {
@@ -331,5 +339,11 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
                 .setPositional(expression.getPositional())
                 .setOperands(expression)
                 .build();
+    }
+    
+    static void countMemoryUsage() {
+    	long curr = (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/1024/1024;
+    	if(curr > maxMemoryUsage)
+    		maxMemoryUsage = curr;
     }
 }
