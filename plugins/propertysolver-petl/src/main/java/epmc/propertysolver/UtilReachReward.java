@@ -43,7 +43,7 @@ public class UtilReachReward {
 	private static EdgeProperty transReward;
 	private static BitSet reachSet;
 	private static BitSet canNotReachSet;
-	private static boolean InfinityFound = false;
+//	private static boolean InfinityFound = false;
 	private static Map<Integer, Map<Integer, Double>> succStateRw;
 	private static Map<Integer, Double> succConstRw;
 	private static Set<Integer> fullExplored;
@@ -111,7 +111,7 @@ public class UtilReachReward {
 		int rolloutTimes = 0;
 		long elapsed = 0;
 		StopWatch watch = new StopWatch(true);
-		
+
 		while(watch.getTimeSeconds() < timeLimit)
 		{
 			if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
@@ -128,13 +128,13 @@ public class UtilReachReward {
 			succConstRw = new HashMap<Integer, Double>();
 			fullExplored = new HashSet<Integer>();
 			rollout_onthefly(root, new ArrayList<FixedAction>(),min, vs);
-			if(!min && InfinityFound)
+			if(!min && root.getR()==Double.POSITIVE_INFINITY)
 			{
 				System.out.println("INFINITY found. Stop rollouts.");
 				root.setR(Double.POSITIVE_INFINITY);
 				break;
 			}
-			InfinityFound = false;
+//			InfinityFound = false;
 		}
 		
 		double final_res = root.getR();
@@ -144,147 +144,16 @@ public class UtilReachReward {
 		System.out.println("Number of nodes: " + constructedNode);
 		return final_res;
 	}
-
-	private static void addAllSuccValues(int curr, int next, double pro)
-	{
-		Map<Integer, Double> currValues;
-		if(!succStateRw.containsKey(curr))
-			currValues = new HashMap<Integer, Double>();
-		else
-			currValues = succStateRw.get(curr);
-		
-		Map<Integer, Double> nextValues;
-		if(!succStateRw.containsKey(curr))
-			nextValues = new HashMap<Integer, Double>();
-		else
-			nextValues = succStateRw.get(next);
-
-		for(int i : nextValues.keySet())
-		{
-			if(currValues.containsKey(i))
-			{
-				double sumPro = currValues.get(i) + nextValues.get(i);
-				currValues.put(i, sumPro * pro);
-			}
-			else
-			{
-				currValues.put(i, nextValues.get(i)*pro);
-			}
-		}
-		succStateRw.put(curr, currValues);
-		
-		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
-		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
-		succConstRw.put(curr, crw + nrw*pro);
-		
-	}
-	
-	private static void addOneSuccValue(int curr, int next, double pro)
-	{
-		Map<Integer, Double> currValues;
-		if(!succStateRw.containsKey(curr))
-			currValues = new HashMap<Integer, Double>();
-		else
-			currValues = succStateRw.get(curr);
-		
-		if(currValues.containsKey(next))
-		{
-			double sumPro = currValues.get(next) + pro;
-			currValues.put(next, sumPro);
-		}
-		else
-		{
-			currValues.put(next, pro);
-		}
-		succStateRw.put(curr, currValues);
-		
-		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
-		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
-		succConstRw.put(curr, crw + nrw*pro);
-	}
-	
-	private static void reform(int state)
-	{
-		Map<Integer, Double> currValues = succStateRw.get(state);
-		if(!currValues.containsKey(state))
-			return;
-		
-		double pro = currValues.get(state);
-		currValues.remove(state);
-		if(currValues.size() == 0 && (!succConstRw.containsKey(state) || succConstRw.get(state)==0 ))
-		{
-			InfinityFound = true;
-			return;
-		}
-		else
-		{
-			for (int i : currValues.keySet())
-			{
-				double p = currValues.get(i);
-				currValues.put(i, p/(1-pro));
-			}
-			
-			succStateRw.put(state, currValues);
-			
-			double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
-			succConstRw.put(state, crw/(1-pro));
-		}
-	}
-	
-	private static void replace(int state)
-	{
-		Map<Integer, Double> values = succStateRw.get(state);
-		Stack<Integer> stack = new Stack<Integer>();
-		
-		for(int st : values.keySet())
-		{
-			if(fullExplored.contains(st))
-				stack.push(st);
-		}
-		
-		while(!stack.isEmpty())
-		{
-			int st = stack.pop();
-			double pro = values.get(st);
-			
-			values.remove(st);
-			Map<Integer, Double> val = succStateRw.get(st);
-			for (int i : val.keySet())
-			{
-				double p = val.get(i);
-				if(values.containsKey(i))
-				{
-					double sumPro = values.get(i) + p*pro;
-					values.put(i, sumPro);
-				}
-				else
-				{
-					values.put(i, p*pro);
-				}
-				if(fullExplored.contains(i))
-				{
-					stack.push(i);
-				}
-			}
-			double srw = succConstRw.containsKey(st)? succConstRw.get(st) : 0;
-			double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
-			succConstRw.put(state, crw+ srw*pro);
-			
-		}
-		succStateRw.put(state, values);
-	}
 	
 	private static void rollout_onthefly(UCTNode node, List<FixedAction> fixedActions, boolean min, Set<Integer> visited)
 	{
-		if(InfinityFound)
-			return;
+//		if(InfinityFound)
+//			return;
 		
-		UCTNode next = null;
-		double currentReward = 0;
 		if(node.isDecision())
 		{
 			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
-			next = choseUnvisitedSucc(successors);
+			UCTNode next = choseUnvisitedSucc(successors);
 			if(next == null)
 			{
 				next = chooseSuccByUCT(node, successors);
@@ -294,14 +163,14 @@ public class UtilReachReward {
 			double srw = ValueDouble.as(stateReward.get(node.getState())).getDouble();
 			//every index of successor has the same transition reward
 			double trw = ValueDouble.as(transReward.get(next.getState(), 0)).getDouble();
-			currentReward = srw + trw;
-
-			rollout_onthefly(next, fixedActions,min, visited);
+			double currentReward = srw + trw;
 			double scr = succConstRw.containsKey(next.getState())? succConstRw.get(next.getState()):0;
 			succConstRw.put(node.getState(), currentReward + scr);
+			rollout_onthefly(next, fixedActions,min, visited);
 			addAllSuccValues(node.getState(), next.getState(), 1);
-			reform(node.getState());
+			
 			replace(node.getState());
+			reform(node.getState());
 		}
 		else
 		{
@@ -309,7 +178,8 @@ public class UtilReachReward {
 			{
 				if(canNotReachSet.get(succ.getState()))
 				{
-					InfinityFound = true;
+//					InfinityFound = true;
+					succConstRw.put(node.getState(), Double.POSITIVE_INFINITY);
 					break;
 				}
 				else if(reachSet.get(succ.getState()))
@@ -322,26 +192,13 @@ public class UtilReachReward {
 						exploreSearchTreeOnTheFly(succ, min);
 					succ.increaseVisitedTimes();
 					addOneSuccValue(node.getState(),succ.getState(), succ.getProbability());
+					
 					if(!visited.contains(succ.getState()))
 					{
 						visited.add(succ.getState());
 						rollout_onthefly(succ, fixedActions,min, visited);
-					}	
+					}
 				}
-//				else if(!visited.contains(succ.getState()))
-//				{
-//					if(!succ.isInitialized())
-//						exploreSearchTreeOnTheFly(succ, min);
-//					succ.increaseVisitedTimes();
-//					visited.add(succ.getState());
-//					rollout_onthefly(succ, fixedActions,min, visited);
-////					addAllSuccValues(node.getState(), succ.getState(), succ.getProbability());
-//					addOneSuccValue(node.getState(),succ.getState(), succ.getProbability());
-//				}
-//				else
-//				{
-//					addOneSuccValue(node.getState(),succ.getState(), succ.getProbability());
-//				}
 			}
 		}
 		double rw = succConstRw.containsKey(node.getState())? succConstRw.get(node.getState()) : 0;
@@ -350,7 +207,6 @@ public class UtilReachReward {
 			node.setR(rw);
 		}
 		fullExplored.add(node.getState());
-//		return rw;
 	}
 	
 	private static void addFixedActionInLocation(List<FixedAction> fixedActions, UCTNode node, UCTNode next)
@@ -402,6 +258,138 @@ public class UtilReachReward {
 		return remaining;
 	}
 
+	private static Map<Integer, Double> getOrCreate(int state)
+	{
+		Map<Integer, Double> innerMap;
+		if(!succStateRw.containsKey(state))
+			innerMap = new HashMap<Integer, Double>();
+		else
+		{
+			innerMap = succStateRw.get(state);
+			succStateRw.put(state, innerMap);
+		}
+		
+		return innerMap;
+	}
+	
+	private static void addAllSuccValues(int curr, int next, double pro)
+	{
+		Map<Integer, Double> currValues = getOrCreate(curr);
+		Map<Integer, Double> nextValues = getOrCreate(next);
+
+		for(int i : nextValues.keySet())
+		{
+			if(currValues.containsKey(i))
+			{
+				double sumPro = currValues.get(i) + nextValues.get(i)*pro;
+				currValues.put(i, sumPro);
+			}
+			else
+			{
+				currValues.put(i, nextValues.get(i)*pro);
+			}
+		}
+		succStateRw.put(curr, currValues);
+		
+		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
+		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
+		succConstRw.put(curr, crw + nrw*pro);
+		
+	}
+	
+	private static void addOneSuccValue(int curr, int next, double pro)
+	{
+		Map<Integer, Double> currValues = getOrCreate(curr);
+		
+		if(currValues.containsKey(next))
+		{
+			double sumPro = currValues.get(next) + pro;
+			currValues.put(next, sumPro);
+		}
+		else
+		{
+			currValues.put(next, pro);
+		}
+		succStateRw.put(curr, currValues);
+		
+		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
+		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
+		succConstRw.put(curr, crw + nrw*pro);
+	}
+	
+	private static void reform(int state)
+	{
+		Map<Integer, Double> currValues = succStateRw.get(state);
+		if(!currValues.containsKey(state))
+			return;
+		
+		double pro = currValues.get(state);
+		currValues.remove(state);
+		if(pro >= 1.0)
+		{
+//			InfinityFound = true;
+			succConstRw.put(state, Double.POSITIVE_INFINITY);
+			return;
+		}
+		else
+		{
+			Map<Integer, Double> newMap = new HashMap<Integer, Double>();
+			for (int i : currValues.keySet())
+			{
+				double p = currValues.get(i);
+				newMap.put(i, p/(1-pro));
+			}
+			
+			succStateRw.put(state, newMap);
+			
+			double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
+			succConstRw.put(state, crw/(1-pro));
+		}
+	}
+	
+	private static void replace(int state)
+	{
+		Map<Integer, Double> values = succStateRw.get(state);
+		Stack<Integer> stack = new Stack<Integer>();
+		
+		for(int st : values.keySet())
+		{
+			if(fullExplored.contains(st))
+				stack.push(st);
+		}
+		
+		while(!stack.isEmpty())
+		{
+			int st = stack.pop();
+			double pro = values.get(st);
+			
+			values.remove(st);
+			Map<Integer, Double> val = succStateRw.get(st);
+			
+			for (int i : val.keySet())
+			{
+				double p = val.get(i);
+				if(values.containsKey(i))
+				{
+					double sumPro = values.get(i) + p*pro;
+					values.put(i, sumPro);
+				}
+				else
+				{
+					values.put(i, p*pro);
+				}
+				if(fullExplored.contains(i))
+				{
+					stack.push(i);
+				}
+			}
+			double srw = succConstRw.containsKey(st)? succConstRw.get(st) : 0;
+			double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
+			succConstRw.put(state, crw+ srw*pro);
+		}
+		succStateRw.put(state, values);
+	}
+	
 	private static UCTNode choseUnvisitedSucc(List<UCTNode> successors)
 	{
 		List<Integer> indexes = new ArrayList<Integer>();
