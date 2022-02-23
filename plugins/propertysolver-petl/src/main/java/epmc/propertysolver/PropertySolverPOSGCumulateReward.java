@@ -28,6 +28,7 @@ import epmc.modelchecker.EngineExplicit;
 import epmc.modelchecker.ModelChecker;
 import epmc.modelchecker.PropertySolver;
 import epmc.operator.Operator;
+//import epmc.petl.model.ModelCSG;
 import epmc.petl.model.ModelMAS;
 import epmc.value.Type;
 import epmc.value.TypeDouble;
@@ -90,8 +91,7 @@ public class PropertySolverPOSGCumulateReward implements PropertySolver{
         if (!(modelChecker.getModel() instanceof ModelMAS)) {
             return false;
         }
-        
-        
+
         ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
         if (!(propertyQuantifier.getQuantified() instanceof ExpressionReward)) {
             return false;
@@ -125,6 +125,11 @@ public class PropertySolverPOSGCumulateReward implements PropertySolver{
         
         StateSet allStates = UtilGraph.computeAllStatesExplicit(modelChecker.getLowLevel());
         Set<Expression> expOfEquiv = ((ModelMAS) modelChecker.getModel()).getEquivalenceRelations().getAllExpressions();
+//        if (modelChecker.getModel() instanceof ModelMAS)
+//        	expOfEquiv = ((ModelMAS) modelChecker.getModel()).getEquivalenceRelations().getAllExpressions();
+//        else
+//        	expOfEquiv = ((ModelCSG) modelChecker.getModel()).getEquivalenceRelations().getAllExpressions();
+
         for (Expression inner : expOfEquiv) {
             required.addAll(modelChecker.getRequiredNodeProperties(inner, allStates));
         }
@@ -149,6 +154,9 @@ public class PropertySolverPOSGCumulateReward implements PropertySolver{
         assert property instanceof ExpressionQuantifier;
 		
         countMemoryUsage();
+        StateSetExplicit forStatesExplicit = (StateSetExplicit) forStates;
+        graph.explore(forStatesExplicit.getStatesExplicit());
+//        System.out.println(graph.toString().replaceAll("\"name", "name").replaceAll("\":\"", ":").replaceAll("\"}", "}"));
         
         ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
         ExpressionReward quantifiedProp = (ExpressionReward) propertyQuantifier.getQuantified();

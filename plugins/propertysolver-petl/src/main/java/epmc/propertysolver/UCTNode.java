@@ -225,5 +225,10 @@ class FixedAction {
 			return false;
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "FixedAction [player=" + player + ", state=" + state + ", action=" + action + "]";
+	}
 	
 }

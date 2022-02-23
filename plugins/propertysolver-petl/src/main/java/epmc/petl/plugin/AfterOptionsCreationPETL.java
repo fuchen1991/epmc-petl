@@ -37,7 +37,9 @@ import epmc.options.OptionTypeInteger;
 import epmc.options.OptionTypeMap;
 import epmc.options.OptionTypeStringList;
 import epmc.options.Options;
+import epmc.petl.model.LowLevelCSGBuilder;
 import epmc.petl.model.LowLevelMASBuilder;
+import epmc.petl.model.ModelCSG;
 import epmc.petl.model.ModelMAS;
 import epmc.petl.model.PropertyPETL;
 import epmc.plugin.AfterOptionsCreation;
@@ -66,6 +68,7 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         OptionTypeMap<Class<?>> modelInputType = options.getType(OptionsModelChecker.MODEL_INPUT_TYPE);
         assert modelInputType != null;
         modelInputType.put(ModelMAS.IDENTIFIER, ModelMAS.class);
+//        modelInputType.put(ModelCSG.IDENTIFIER, ModelCSG.class);
         Map<String,Class<?>> propertyClasses = options.get(OptionsModelChecker.PROPERTY_CLASS);
         assert propertyClasses != null;
         propertyClasses.put(PropertyPETL.IDENTIFIER, PropertyPETL.class);
@@ -77,6 +80,7 @@ public final class AfterOptionsCreationPETL implements AfterOptionsCreation {
         Map<String,Class<? extends LowLevel.Builder>> map = 
                 options.get(OptionsModelChecker.LOW_LEVEL_ENGINE_CLASS);
         map.put(LowLevelMASBuilder.IDENTIFIER, LowLevelMASBuilder.class);
+//        map.put(LowLevelCSGBuilder.IDENTIFIER, LowLevelCSGBuilder.class);
         UtilPrismConverter.addOptions(options);
         
         Map<String,Class<?>> solvers = options.get(OptionsModelChecker.PROPERTY_SOLVER_CLASS);

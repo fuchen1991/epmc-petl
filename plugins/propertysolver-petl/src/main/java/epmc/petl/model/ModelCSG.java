@@ -34,21 +34,14 @@ import epmc.prism.model.ModuleCommands;
 import epmc.prism.model.PlayerDefinition;
 import epmc.prism.options.OptionsPRISM;
 
-/**
- * MAS(Multi Agent System) model representation.
- * Basically, it consists of two parts: a prism model and the equivalence relations.
- * 
- * @author Chen Fu
- */
-public class ModelMAS implements ModelJANIConverter{
-	public final static String IDENTIFIER = "mas";
+public class ModelCSG implements ModelJANIConverter{
+	public final static String IDENTIFIER = "csg";
 
-	//Most parts of the prism model can be resued
 	ModelPRISM modelPrism = new ModelPRISM();
-	//We need a variable to store the equivalence relations
 	EquivalenceRelations equivalenceRelations;
 	
 	ModelPRISM synModelPrism = new ModelPRISM();
+	Map<String, String> playerModule = new HashMap<String, String>();
 	List<String> players = new ArrayList<String>();
 	
 	@Override
@@ -78,39 +71,26 @@ public class ModelMAS implements ModelJANIConverter{
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-        
-        if(modelPrism.getPlayers().size() >0)
+
+        List<Module> toSynModules = new ArrayList<Module>();
+        for(PlayerDefinition p : modelPrism.getPlayers())
         {
-        	//csg
-        	List<Module> toSynModules = new ArrayList<Module>();
-            for(PlayerDefinition p : modelPrism.getPlayers())
-            {
-            	String playerName = p.getName();
-            	String moduleName = p.getModules().iterator().next();
-            	players.add(playerName);
-            	
-            	for(Module m : modelPrism.getModules())
-            	{
-            		if(m.getName().equals(moduleName))
-            		{
-            			toSynModules.add(m);
-            			break;
-            		}
-            	}
-            }
-            synchronizeModelCSG(toSynModules);
-        }
-        else
-        {
-        	//mas(mdp)
+        	String playerName = p.getName();
+        	String moduleName = p.getModules().iterator().next();
+        	playerModule.put(playerName, moduleName);
+        	players.add(playerName);
+        	
         	for(Module m : modelPrism.getModules())
         	{
-            	players.add(m.getName());
+        		if(m.getName().equals(moduleName))
+        		{
+        			toSynModules.add(m);
+        			break;
+        		}
         	}
-            
-            //we compose the modules differently with prism
-        	synchronizeModelMDP();
         }
+        synchronizeModel(toSynModules);
+        
         getLog().send(MessagesPRISM.DONE_PARSING);
 	}
 	
@@ -119,29 +99,7 @@ public class ModelMAS implements ModelJANIConverter{
 		return this.players;
 	}
 	
-	private void synchronizeModelMDP()
-	{
-		Semantics semantics = modelPrism.getSemantics();
-		if(SemanticsDTMC.isDTMC(semantics) || (modelPrism.getModules().size() == 1))
-		{
-			synModelPrism = modelPrism;
-			return;
-		}
-		
-		Module module = synModules(modelPrism.getModules());
-		List<Module> list = new ArrayList<Module>();
-		list.add(module);
-		synModelPrism.build(new ModelPRISM.Builder()
-				.setFormulas(modelPrism.getFormulas())
-				.setGlobalInitValues(modelPrism.getGlobalInitValues())
-				.setGlobalVariables(modelPrism.getGlobalVariables())
-				.setModules(list)
-				.setPlayers(modelPrism.getPlayers())
-				.setSemantics(modelPrism.getSemantics())
-				.setRewards(modelPrism.getRewards()));
-	}
-	
-	private void synchronizeModelCSG(List<Module> ms)
+	private void synchronizeModel(List<Module> ms)
 	{
 		Semantics semantics = modelPrism.getSemantics();
 		if(SemanticsDTMC.isDTMC(semantics) || (modelPrism.getModules().size() == 1))
