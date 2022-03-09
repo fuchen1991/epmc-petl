@@ -56,13 +56,13 @@ public class UtilReachReward {
 		transReward = tr;
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
-		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
-        players = new ArrayList<String>();
+//		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
+		players = ((ModelMAS) modelChecker.getModel()).getPlayers();
         equivalenceClasses = new EquivalenceClasses(modelChecker);
-        for(Module m : modules)
-        {
-        	players.add(m.getName());
-        }
+//        for(Module m : modules)
+//        {
+//        	players.add(m.getName());
+//        }
         Options options = Options.get();
         timeLimit = options.getInteger(OptionsUCT.UCT_TIME_LIMIT);
         bValueCoefficient = options.getInteger(OptionsUCT.BVALUE);
@@ -164,8 +164,15 @@ public class UtilReachReward {
 			//every index of successor has the same transition reward
 			double trw = ValueDouble.as(transReward.get(next.getState(), 0)).getDouble();
 			double currentReward = srw + trw;
-			double scr = succConstRw.containsKey(next.getState())? succConstRw.get(next.getState()):0;
-			succConstRw.put(node.getState(), currentReward + scr);
+			
+//			System.out.println(node.getState() + "   " + currentReward);
+			
+			
+			//double scr = succConstRw.containsKey(next.getState())? succConstRw.get(next.getState()):0;
+			//System.out.println( " scr  " + currentReward);
+			//succConstRw.put(node.getState(), currentReward + scr);
+			
+			succConstRw.put(node.getState(), currentReward);
 			rollout_onthefly(next, fixedActions,min, visited);
 			addAllSuccValues(node.getState(), next.getState(), 1);
 			
@@ -276,7 +283,23 @@ public class UtilReachReward {
 	{
 		Map<Integer, Double> currValues = getOrCreate(curr);
 		Map<Integer, Double> nextValues = getOrCreate(next);
-
+		
+//		for(int i : currValues.keySet())
+//		{
+//			System.out.println(i + "  " + currValues.get(i));
+//		}
+//		System.out.println(curr + "  " + succConstRw.get(curr));
+//		
+//		System.out.println("mmmm");
+//		
+//		for(int i : nextValues.keySet())
+//		{
+//			System.out.println(i + "  " + nextValues.get(i));
+//		}
+//		System.out.println(next + "  " + succConstRw.get(next));
+//		
+//		System.exit(0);
+		
 		for(int i : nextValues.keySet())
 		{
 			if(currValues.containsKey(i))
@@ -291,9 +314,10 @@ public class UtilReachReward {
 		}
 		succStateRw.put(curr, currValues);
 		
-		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
-		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
-		succConstRw.put(curr, crw + nrw*pro);
+		//not needed
+//		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
+//		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
+//		succConstRw.put(curr, crw + nrw*pro);
 		
 	}
 	
@@ -312,9 +336,9 @@ public class UtilReachReward {
 		}
 		succStateRw.put(curr, currValues);
 		
-		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
-		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
-		succConstRw.put(curr, crw + nrw*pro);
+//		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
+//		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
+//		succConstRw.put(curr, crw + nrw*pro);
 	}
 	
 	private static void reform(int state)
@@ -325,7 +349,9 @@ public class UtilReachReward {
 		
 		double pro = currValues.get(state);
 		currValues.remove(state);
-		if(pro >= 1.0)
+		
+		
+		if(Math.abs(1-pro)<0.00000000001)
 		{
 //			InfinityFound = true;
 			succConstRw.put(state, Double.POSITIVE_INFINITY);
@@ -343,6 +369,7 @@ public class UtilReachReward {
 			succStateRw.put(state, newMap);
 			
 			double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
+//			System.out.println(state + "   " + crw);
 			succConstRw.put(state, crw/(1-pro));
 		}
 	}

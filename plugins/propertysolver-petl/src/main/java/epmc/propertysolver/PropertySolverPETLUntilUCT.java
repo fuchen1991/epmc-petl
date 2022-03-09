@@ -143,8 +143,6 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
         for (Expression inner : expOfEquiv) {
             required.addAll(modelChecker.getRequiredNodeProperties(inner, allStates));
         }
-        
-        System.out.println("Max memory usage:" + maxMemoryUsage + " MB");
         return required;
 	}
 
@@ -176,6 +174,8 @@ public class PropertySolverPETLUntilUCT implements PropertySolver{
             assert op != null;
             result = result.applyWith(op, compare);
         }
+        
+        System.out.println("Max memory usage:" + maxMemoryUsage + " MB");
         return result;
 	}
 	

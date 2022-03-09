@@ -45,13 +45,13 @@ public class UtilInstantReward {
 		stateReward = sr;
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
-		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
-        players = new ArrayList<String>();
+//		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
+		players = ((ModelMAS) modelChecker.getModel()).getPlayers();
         equivalenceClasses = new EquivalenceClasses(modelChecker);
-        for(Module m : modules)
-        {
-        	players.add(m.getName());
-        }
+//        for(Module m : modules)
+//        {
+//        	players.add(m.getName());
+//        }
         Options options = Options.get();
         timeLimit = options.getInteger(OptionsUCT.UCT_TIME_LIMIT);
         bValueCoefficient = options.getInteger(OptionsUCT.BVALUE);

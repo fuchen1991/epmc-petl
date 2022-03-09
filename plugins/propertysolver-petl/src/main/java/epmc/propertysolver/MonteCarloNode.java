@@ -30,6 +30,11 @@ public class MonteCarloNode {
 		return explored;
 	}
 	
+	public boolean contains(int state)
+	{
+		return this.probabilities.containsKey(state);
+	}
+	
 	public void setExplored(boolean b) {
 		this.explored = b;
 	}
@@ -104,7 +109,7 @@ class RolloutNode {
 	public double getValue(String key) {
 		if(successor_values.containsKey(key))
 			return successor_values.get(key);
-		return -1;
+		return 0;
 	}
 	
 	public HashMap<String, Double> getSuccessor_values() {
@@ -120,19 +125,9 @@ class RolloutNode {
 	}
 	
 	public void addSuccValue(String s, double pro) {
-//		if(state == 122)
-//		{
-//			System.out.println("state is " + state + " key is " + s + " , value is " + (pro));
-//		}
-
 		if(successor_values.containsKey(s))
 		{
 			double p = successor_values.get(s);
-//			if(p+pro>1)
-//			{
-//				System.out.println("state is " + state + " ,key is " + s + " , value is " + (p) + " and " + pro);
-//				System.exit(0);
-//			}
 			successor_values.put(s, p+pro);
 		}
 		else
@@ -147,9 +142,15 @@ class RolloutNode {
 			return;
 		double pro = successor_values.get(key);
 		successor_values.remove(key);
-		if(successor_values.size() == 0)
+//		if(successor_values.size() == 0)
+//		{
+//			// a loop is detected
+//			successor_values.put("0", 1.0);
+//		}
+		if(Math.abs(1-pro)<0.00000000001)
 		{
 			// a loop is detected
+			successor_values.clear();
 			successor_values.put("0", 1.0);
 		}
 		else
@@ -182,5 +183,18 @@ class RolloutNode {
 //			System.out.println(probability);
 //			System.exit(0);
 //		}
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+	
+	public void removeValue(String s)
+	{
+		this.successor_values.remove(s);
 	}
 }

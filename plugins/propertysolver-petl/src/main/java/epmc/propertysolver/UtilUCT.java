@@ -127,18 +127,14 @@ public class UtilUCT {
 				root.increaseVisitedTimes();
 				rolloutTimes += 1;
 				rollout_min_onthefly_maxnotB(root, depthLimit, new ArrayList<FixedAction>(), min,visitedStates);
-				//if(root.getR() == 0.0)
-				//	break;
+				if(root.getR() == 1.0)//max NOT going B
+					break;
 			}
 		}
 		else
 		{
 			while(watch.getTimeSeconds() < timeLimit)
 			{
-				Runtime runtime = Runtime.getRuntime();
-				runtime.gc();
-		        long memory = runtime.totalMemory() - runtime.freeMemory();
-		        System.out.println("Used memory is megabytes: " + memory/(1024L*1024L));
 				if(watch.getTime() - elapsed * 1000  >= printTimeInterval * 1000)
 				{
 					PropertySolverPETLUntilUCT.countMemoryUsage();
@@ -148,8 +144,8 @@ public class UtilUCT {
 				root.increaseVisitedTimes();
 				rolloutTimes += 1;
 				rollout_max_onthefly(root, depthLimit, new ArrayList<FixedAction>(),min,visitedStates);
-				//if(root.getR() == 1.0)
-				//	break;
+				if(root.getR() == 1.0)
+					break;
 				
 				
 			}

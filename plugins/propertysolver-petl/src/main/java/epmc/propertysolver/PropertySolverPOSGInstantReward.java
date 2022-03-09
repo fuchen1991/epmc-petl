@@ -151,6 +151,8 @@ public class PropertySolverPOSGInstantReward implements PropertySolver{
         assert property instanceof ExpressionQuantifier;
 		
         countMemoryUsage();
+        StateSetExplicit forStatesExplicit = (StateSetExplicit) forStates;
+        graph.explore(forStatesExplicit.getStatesExplicit());
         
         ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
         ExpressionReward quantifiedProp = (ExpressionReward) propertyQuantifier.getQuantified();
@@ -179,6 +181,7 @@ public class PropertySolverPOSGInstantReward implements PropertySolver{
 		
 		RewardSpecification rewardStructure = ((ExpressionReward) property).getReward();
         NodeProperty stateReward = graph.getNodeProperty(rewardStructure);
+        EdgeProperty transReward = graph.getEdgeProperty(rewardStructure);
         
         countMemoryUsage();
         double[] resultValue = UtilInstantReward.computeProbabilities(min,computeForStates, graph,modelChecker,k,stateReward);

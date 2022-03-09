@@ -161,6 +161,9 @@ public class PropertySolverPETLUntilUCTWithoutDepth implements PropertySolver{
         assert property instanceof ExpressionQuantifier;
 		StateSetExplicit forStatesExplicit = (StateSetExplicit) forStates;
         graph.explore(forStatesExplicit.getStatesExplicit());
+        
+//        System.out.println(graph.toString().replaceAll("\"name", "name").replaceAll("\":\"", ":").replaceAll("\"}", "}"));
+        
         ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
         Expression quantifiedProp = propertyQuantifier.getQuantified();
         DirType dirType = ExpressionQuantifier.computeQuantifierDirType(propertyQuantifier);

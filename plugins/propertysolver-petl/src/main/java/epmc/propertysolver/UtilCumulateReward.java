@@ -94,8 +94,8 @@ public class UtilCumulateReward {
 		int rolloutTimes = 0;
 		long elapsed = 0;
 		StopWatch watch = new StopWatch(true);
-		List<FixedAction> bestActions = new ArrayList<FixedAction>();
-		double bestResult = 0;
+//		List<FixedAction> bestActions = new ArrayList<FixedAction>();
+//		double bestResult = 0;
 		
 		
 		while(watch.getTimeSeconds() < timeLimit)
@@ -111,12 +111,12 @@ public class UtilCumulateReward {
 			fixedActions = new ArrayList<FixedAction>();
 //			List<FixedAction> t = new ArrayList<FixedAction>();
 			rollout_onthefly(root, k,min);
-			if(root.getVisitedTimes() <= 1 || root.getR() > bestResult)
-			{
-				bestActions.clear();
-				bestActions.addAll(fixedActions);
-				bestResult = root.getR();
-			}
+//			if(root.getVisitedTimes() <= 1 || root.getR() > bestResult)
+//			{
+//				bestActions.clear();
+//				bestActions.addAll(fixedActions);
+//				bestResult = root.getR();
+//			}
 		}
 		
 		double final_res = root.getR();
@@ -125,11 +125,11 @@ public class UtilCumulateReward {
 		System.out.println("Number of rollouts: " + rolloutTimes);
 		System.out.println("Number of nodes: " + constructedNode);
 		
-		System.out.println("Best actions:");
-		for(FixedAction f : bestActions)
-		{
-			System.out.println(f.toString());
-		}
+//		System.out.println("Best actions:");
+//		for(FixedAction f : bestActions)
+//		{
+//			System.out.println(f.toString());
+//		}
 		
 		return final_res;
 	}
@@ -149,14 +149,14 @@ public class UtilCumulateReward {
 			}
 			next.increaseVisitedTimes();
 			addFixedAction(node, next);
-			if(node.getState() > 2)
-			{
+//			if(node.getState() > 2)
+//			{
 //				for(FixedAction f : fixedActions)
 //				{
 //					System.out.println(f.toString());
 //				}
 //				System.exit(0);
-			}
+//			}
 			
 			double srw = ValueDouble.as(stateReward.get(node.getState())).getDouble();
 			//every index of successor has the same transition reward

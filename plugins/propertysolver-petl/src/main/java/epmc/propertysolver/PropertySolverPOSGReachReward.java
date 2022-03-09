@@ -155,6 +155,10 @@ public class PropertySolverPOSGReachReward implements PropertySolver{
         assert property instanceof ExpressionQuantifier;
 		
         countMemoryUsage();
+        StateSetExplicit forStatesExplicit = (StateSetExplicit) forStates;
+        graph.explore(forStatesExplicit.getStatesExplicit());
+//        System.out.println(graph.toString().replaceAll("\"name", "name").replaceAll("\":\"", ":").replaceAll("\"}", "}"));
+        
         
         ExpressionQuantifier propertyQuantifier = (ExpressionQuantifier) property;
         ExpressionReward quantifiedProp = (ExpressionReward) propertyQuantifier.getQuantified();
