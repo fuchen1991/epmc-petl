@@ -11,7 +11,7 @@ All the implementation details related to PETL model checking are under "epmc-pe
 You can find the experiment files used in the paper under "experiment_files". 
 
 ## Get the runnable jar file
-You can download the runnable jar file from https://github.com/fuchen1991/epmc-petl/releases/tag/v1.0, or build it by yourself:
+You can download the runnable jar file from https://github.com/fuchen1991/epmc-petl/releases/tag/v1.0.1, or build it by yourself:
 
 1. Dependencies: JDK 13.0+, Maven
  
@@ -186,7 +186,7 @@ Number of nodes: 7455939
 Finished model checking. Time required: 10 seconds
 Pmax=? [F (at_goal1 | at_goal2)]: 0.9987024
 ```
-We remark that 
+
 ## Tips for developing
 
 Although there is  a "epmc-constraintsolver-smt-lib" plugin, it's not enough for our MINLP problems. We change the classes "ConstraintSolverSMTLib", "InputWriter", and "OutputReader". And we  also copy "SMTLibOperator", "SMTLibResult", and "SMTLibVariable", because they are not public classes.  We use some other classes from  "epmc-constraintsolver-smt-lib", so  we need to add this plugin as a dependency. We call our new constraint solver as "smt-lib-petl".
@@ -196,6 +196,9 @@ Although there is  a "epmc-constraintsolver-smt-lib" plugin, it's not enough for
 
 
 The model checking algorithms are in the classes under epmc.propertysolver in the petl plugin.
+
+
+We found a bug in EPMC(ePMC/plugins/graph/src/main/java/epmc/graph/explicit/GraphBuilderExplorer.java) and fixed it for our petl plugin. This fix is not applied to the original EPMC project, because it needs the developers to confirm. So this file is different with the one in the original EPMC project.
 
 ## Contact
 Any comments and feedback about this project are very welcome. Please contact:
