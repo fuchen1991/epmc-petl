@@ -37,6 +37,7 @@ public class UtilInstantReward {
 	private static int seed = 1000;
 	private static int constructedNode = 0;
 	private static NodeProperty stateReward;
+	private static List<FixedAction> fixedActions;
 	
 	private static void init(GraphExplicit gh, ModelChecker mc, NodeProperty sr)
 	{
@@ -45,13 +46,8 @@ public class UtilInstantReward {
 		stateReward = sr;
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
-//		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
 		players = ((ModelMAS) modelChecker.getModel()).getPlayers();
         equivalenceClasses = new EquivalenceClasses(modelChecker);
-//        for(Module m : modules)
-//        {
-//        	players.add(m.getName());
-//        }
         Options options = Options.get();
         timeLimit = options.getInteger(OptionsUCT.UCT_TIME_LIMIT);
         bValueCoefficient = options.getInteger(OptionsUCT.BVALUE);
@@ -86,6 +82,8 @@ public class UtilInstantReward {
 		int rolloutTimes = 0;
 		long elapsed = 0;
 		StopWatch watch = new StopWatch(true);
+		List<FixedAction> bestActions = new ArrayList<FixedAction>();
+		double bestResult = 0;
 		
 		while(watch.getTimeSeconds() < timeLimit)
 		{
@@ -95,9 +93,16 @@ public class UtilInstantReward {
 				elapsed += printTimeInterval;
 				System.out.println("Elapsed time: " +  elapsed + "s Current result: " + root.getR()+ " rollouts: " + rolloutTimes + " nodes: " + constructedNode);
 			}
-			root.increaseVisitedTimes();
 			rolloutTimes += 1;
-			rollout_onthefly(root, k, new ArrayList<FixedAction>(),min);
+			fixedActions = new ArrayList<FixedAction>();
+			rollout_onthefly(root, k, min);
+			
+			if(root.getVisitedTimes() <= 1 || (!min && root.getR() > bestResult) || (min && root.getR() < bestResult))
+			{
+				bestActions.clear();
+				bestActions.addAll(fixedActions);
+				bestResult = root.getR();
+			}
 		}
 		
 		double final_res = root.getR();
@@ -105,10 +110,17 @@ public class UtilInstantReward {
 		System.out.println("Final result: " + final_res);
 		System.out.println("Number of rollouts: " + rolloutTimes);
 		System.out.println("Number of nodes: " + constructedNode);
+		
+		System.out.println("Best actions:");
+		for(FixedAction f : bestActions)
+		{
+			System.out.println(f.toString());
+		}
+		
 		return final_res;
 	}
 
-	private static double rollout_onthefly(UCTNode node, int depth, List<FixedAction> fixedActions, boolean min)
+	private static double rollout_onthefly(UCTNode node, int depth, boolean min)
 	{
 		if(depth == 0)
 			return ValueDouble.as(stateReward.get(node.getState())).getDouble();
@@ -122,9 +134,8 @@ public class UtilInstantReward {
 			{
 				next = chooseSuccByUCT(node, successors);
 			}
-			next.increaseVisitedTimes();
-			addFixedActionInLocation(fixedActions, node, next);
-			res = rollout_onthefly(next,depth, fixedActions,min);
+			addFixedActionInLocation( node, next);
+			res = rollout_onthefly(next,depth,min);
 		}
 		else
 		{
@@ -132,8 +143,7 @@ public class UtilInstantReward {
 			{
 				if(depth > 0 && !succ.isInitialized())
 					exploreSearchTreeOnTheFly(succ, min);
-				succ.increaseVisitedTimes();
-				double rs = succ.getProbability() * rollout_onthefly(succ, depth-1, fixedActions,min);
+				double rs = succ.getProbability() * rollout_onthefly(succ, depth-1,min);
 				res += rs;
 			}
 		}
@@ -141,11 +151,11 @@ public class UtilInstantReward {
 		{
 			node.setR(res);
 		}
-		
+		node.increaseVisitedTimes();
 		return res;
 	}
 	
-	private static void addFixedActionInLocation(List<FixedAction> fixedActions, UCTNode node, UCTNode next)
+	private static void addFixedActionInLocation( UCTNode node, UCTNode next)
 	{
 		String globalAction = next.getAction();
 		int state = node.getState();

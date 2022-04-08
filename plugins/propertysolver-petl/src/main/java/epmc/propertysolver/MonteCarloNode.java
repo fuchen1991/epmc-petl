@@ -142,11 +142,7 @@ class RolloutNode {
 			return;
 		double pro = successor_values.get(key);
 		successor_values.remove(key);
-//		if(successor_values.size() == 0)
-//		{
-//			// a loop is detected
-//			successor_values.put("0", 1.0);
-//		}
+
 		if(Math.abs(1-pro)<0.00000000001)
 		{
 			// a loop is detected
@@ -177,12 +173,6 @@ class RolloutNode {
 			}
 		}
 		
-//		if(state == 122)
-//		{
-//			System.out.println("state is " + state + " key is " + successor_values.get("1"));
-//			System.out.println(probability);
-//			System.exit(0);
-//		}
 	}
 
 	public int getState() {

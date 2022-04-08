@@ -50,13 +50,8 @@ public class UtilCumulateReward {
 		transReward = tr;
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
-//		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
         players = ((ModelMAS) modelChecker.getModel()).getPlayers();
         equivalenceClasses = new EquivalenceClasses(modelChecker);
-//        for(Module m : modules)
-//        {
-//        	players.add(m.getName());
-//        }
         Options options = Options.get();
         timeLimit = options.getInteger(OptionsUCT.UCT_TIME_LIMIT);
         bValueCoefficient = options.getInteger(OptionsUCT.BVALUE);
@@ -94,8 +89,8 @@ public class UtilCumulateReward {
 		int rolloutTimes = 0;
 		long elapsed = 0;
 		StopWatch watch = new StopWatch(true);
-//		List<FixedAction> bestActions = new ArrayList<FixedAction>();
-//		double bestResult = 0;
+		List<FixedAction> bestActions = new ArrayList<FixedAction>();
+		double bestResult = 0;
 		
 		
 		while(watch.getTimeSeconds() < timeLimit)
@@ -109,14 +104,13 @@ public class UtilCumulateReward {
 			root.increaseVisitedTimes();
 			rolloutTimes += 1;
 			fixedActions = new ArrayList<FixedAction>();
-//			List<FixedAction> t = new ArrayList<FixedAction>();
 			rollout_onthefly(root, k,min);
-//			if(root.getVisitedTimes() <= 1 || root.getR() > bestResult)
-//			{
-//				bestActions.clear();
-//				bestActions.addAll(fixedActions);
-//				bestResult = root.getR();
-//			}
+			if(root.getVisitedTimes() <= 1 || root.getR() > bestResult)
+			{
+				bestActions.clear();
+				bestActions.addAll(fixedActions);
+				bestResult = root.getR();
+			}
 		}
 		
 		double final_res = root.getR();
@@ -125,11 +119,11 @@ public class UtilCumulateReward {
 		System.out.println("Number of rollouts: " + rolloutTimes);
 		System.out.println("Number of nodes: " + constructedNode);
 		
-//		System.out.println("Best actions:");
-//		for(FixedAction f : bestActions)
-//		{
-//			System.out.println(f.toString());
-//		}
+		System.out.println("Best actions:");
+		for(FixedAction f : bestActions)
+		{
+			System.out.println(f.toString());
+		}
 		
 		return final_res;
 	}
@@ -149,24 +143,13 @@ public class UtilCumulateReward {
 			}
 			next.increaseVisitedTimes();
 			addFixedAction(node, next);
-//			if(node.getState() > 2)
-//			{
-//				for(FixedAction f : fixedActions)
-//				{
-//					System.out.println(f.toString());
-//				}
-//				System.exit(0);
-//			}
 			
 			double srw = ValueDouble.as(stateReward.get(node.getState())).getDouble();
 			//every index of successor has the same transition reward
 			double trw = ValueDouble.as(transReward.get(next.getState(), 0)).getDouble();
 			currentReward = srw + trw;
-			if(depth == 1)
-			{
-				return currentReward;
-			}
-			succReward = rollout_onthefly(next,depth,min);
+			if(depth > 1)
+				succReward = rollout_onthefly(next,depth,min);
 		}
 		else
 		{
@@ -225,7 +208,7 @@ public class UtilCumulateReward {
 			int state = node.getState();
 			for(FixedAction fix : fixedActions)
 			{
-				if(players.size()>1 && !fix.action.contains(","))
+				if(players.size()>1 && (!fix.action.contains(",") | !action.contains(",")))
 					continue;
 				if(equivalenceClasses.isEquivalent(fix.player, fix.state, state))
 				{

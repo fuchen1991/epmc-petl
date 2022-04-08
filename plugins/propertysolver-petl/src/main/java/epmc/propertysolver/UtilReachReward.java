@@ -43,10 +43,10 @@ public class UtilReachReward {
 	private static EdgeProperty transReward;
 	private static BitSet reachSet;
 	private static BitSet canNotReachSet;
-//	private static boolean InfinityFound = false;
 	private static Map<Integer, Map<Integer, Double>> succStateRw;
 	private static Map<Integer, Double> succConstRw;
 	private static Set<Integer> fullExplored;
+	private static List<FixedAction> fixedActions;
 	
 	private static void init(GraphExplicit gh, ModelChecker mc, NodeProperty sr, EdgeProperty tr)
 	{
@@ -56,13 +56,8 @@ public class UtilReachReward {
 		transReward = tr;
 		actionLabel = graph.getEdgeProperty(CommonProperties.TRANSITION_LABEL);
 		probability = graph.getEdgeProperty(CommonProperties.WEIGHT);
-//		List<Module> modules = ((ModelMAS) modelChecker.getModel()).getModelPrism().getModules();
 		players = ((ModelMAS) modelChecker.getModel()).getPlayers();
         equivalenceClasses = new EquivalenceClasses(modelChecker);
-//        for(Module m : modules)
-//        {
-//        	players.add(m.getName());
-//        }
         Options options = Options.get();
         timeLimit = options.getInteger(OptionsUCT.UCT_TIME_LIMIT);
         bValueCoefficient = options.getInteger(OptionsUCT.BVALUE);
@@ -111,6 +106,8 @@ public class UtilReachReward {
 		int rolloutTimes = 0;
 		long elapsed = 0;
 		StopWatch watch = new StopWatch(true);
+		List<FixedAction> bestActions = new ArrayList<FixedAction>();
+		double bestResult = 0;
 
 		while(watch.getTimeSeconds() < timeLimit)
 		{
@@ -120,21 +117,34 @@ public class UtilReachReward {
 				elapsed += printTimeInterval;
 				System.out.println("Elapsed time: " +  elapsed + "s Current result: " + root.getR()+ " rollouts: " + rolloutTimes + " nodes: " + constructedNode);
 			}
-			root.increaseVisitedTimes();
+
 			rolloutTimes += 1;
 			Set<Integer> vs = new HashSet<Integer>();
 			vs.add(state);
 			succStateRw = new HashMap<Integer, Map<Integer, Double>>();
 			succConstRw = new HashMap<Integer, Double>();
 			fullExplored = new HashSet<Integer>();
-			rollout_onthefly(root, new ArrayList<FixedAction>(),min, vs);
+			fixedActions = new ArrayList<FixedAction>();
+			rollout_onthefly(root, min, vs);
 			if(!min && root.getR()==Double.POSITIVE_INFINITY)
 			{
 				System.out.println("INFINITY found. Stop rollouts.");
 				root.setR(Double.POSITIVE_INFINITY);
 				break;
 			}
-//			InfinityFound = false;
+
+			if(root.getVisitedTimes() <= 1 || (!min && root.getR() > bestResult) || (min && root.getR() < bestResult))
+			{
+				bestActions.clear();
+				bestActions.addAll(fixedActions);
+				bestResult = root.getR();
+			}
+		}
+		
+		System.out.println("Best actions:");
+		for(FixedAction f : bestActions)
+		{
+			System.out.println(f.toString());
 		}
 		
 		double final_res = root.getR();
@@ -145,11 +155,8 @@ public class UtilReachReward {
 		return final_res;
 	}
 	
-	private static void rollout_onthefly(UCTNode node, List<FixedAction> fixedActions, boolean min, Set<Integer> visited)
+	private static void rollout_onthefly(UCTNode node, boolean min, Set<Integer> visited)
 	{
-//		if(InfinityFound)
-//			return;
-		
 		if(node.isDecision())
 		{
 			List<UCTNode> successors = remainingSuccessors(node, fixedActions);
@@ -158,22 +165,15 @@ public class UtilReachReward {
 			{
 				next = chooseSuccByUCT(node, successors);
 			}
-			next.increaseVisitedTimes();
-			addFixedActionInLocation(fixedActions, node, next);
+			
+			addFixedActionInLocation( node, next);
 			double srw = ValueDouble.as(stateReward.get(node.getState())).getDouble();
 			//every index of successor has the same transition reward
 			double trw = ValueDouble.as(transReward.get(next.getState(), 0)).getDouble();
 			double currentReward = srw + trw;
 			
-//			System.out.println(node.getState() + "   " + currentReward);
-			
-			
-			//double scr = succConstRw.containsKey(next.getState())? succConstRw.get(next.getState()):0;
-			//System.out.println( " scr  " + currentReward);
-			//succConstRw.put(node.getState(), currentReward + scr);
-			
 			succConstRw.put(node.getState(), currentReward);
-			rollout_onthefly(next, fixedActions,min, visited);
+			rollout_onthefly(next,min, visited);
 			addAllSuccValues(node.getState(), next.getState(), 1);
 			
 			replace(node.getState());
@@ -185,7 +185,6 @@ public class UtilReachReward {
 			{
 				if(canNotReachSet.get(succ.getState()))
 				{
-//					InfinityFound = true;
 					succConstRw.put(node.getState(), Double.POSITIVE_INFINITY);
 					break;
 				}
@@ -197,13 +196,12 @@ public class UtilReachReward {
 				{
 					if(!succ.isInitialized())
 						exploreSearchTreeOnTheFly(succ, min);
-					succ.increaseVisitedTimes();
 					addOneSuccValue(node.getState(),succ.getState(), succ.getProbability());
 					
 					if(!visited.contains(succ.getState()))
 					{
 						visited.add(succ.getState());
-						rollout_onthefly(succ, fixedActions,min, visited);
+						rollout_onthefly(succ,min, visited);
 					}
 				}
 			}
@@ -214,9 +212,10 @@ public class UtilReachReward {
 			node.setR(rw);
 		}
 		fullExplored.add(node.getState());
+		node.increaseVisitedTimes();
 	}
 	
-	private static void addFixedActionInLocation(List<FixedAction> fixedActions, UCTNode node, UCTNode next)
+	private static void addFixedActionInLocation(UCTNode node, UCTNode next)
 	{
 		String globalAction = next.getAction();
 		int state = node.getState();
@@ -262,6 +261,7 @@ public class UtilReachReward {
 				remaining.add(n);
 			}
 		}
+		
 		return remaining;
 	}
 
@@ -283,23 +283,6 @@ public class UtilReachReward {
 	{
 		Map<Integer, Double> currValues = getOrCreate(curr);
 		Map<Integer, Double> nextValues = getOrCreate(next);
-		
-//		for(int i : currValues.keySet())
-//		{
-//			System.out.println(i + "  " + currValues.get(i));
-//		}
-//		System.out.println(curr + "  " + succConstRw.get(curr));
-//		
-//		System.out.println("mmmm");
-//		
-//		for(int i : nextValues.keySet())
-//		{
-//			System.out.println(i + "  " + nextValues.get(i));
-//		}
-//		System.out.println(next + "  " + succConstRw.get(next));
-//		
-//		System.exit(0);
-		
 		for(int i : nextValues.keySet())
 		{
 			if(currValues.containsKey(i))
@@ -314,11 +297,11 @@ public class UtilReachReward {
 		}
 		succStateRw.put(curr, currValues);
 		
-		//not needed
-//		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
-//		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
-//		succConstRw.put(curr, crw + nrw*pro);
-		
+		if(succConstRw.containsKey(next) )
+		{
+			double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
+			succConstRw.put(curr, crw + succConstRw.get(next) * pro);
+		}
 	}
 	
 	private static void addOneSuccValue(int curr, int next, double pro)
@@ -335,10 +318,6 @@ public class UtilReachReward {
 			currValues.put(next, pro);
 		}
 		succStateRw.put(curr, currValues);
-		
-//		double crw = succConstRw.containsKey(curr)? succConstRw.get(curr) : 0;
-//		double nrw = succConstRw.containsKey(next)? succConstRw.get(next) : 0;
-//		succConstRw.put(curr, crw + nrw*pro);
 	}
 	
 	private static void reform(int state)
@@ -353,7 +332,6 @@ public class UtilReachReward {
 		
 		if(Math.abs(1-pro)<0.00000000001)
 		{
-//			InfinityFound = true;
 			succConstRw.put(state, Double.POSITIVE_INFINITY);
 			return;
 		}
@@ -368,9 +346,11 @@ public class UtilReachReward {
 			
 			succStateRw.put(state, newMap);
 			
-			double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
-//			System.out.println(state + "   " + crw);
-			succConstRw.put(state, crw/(1-pro));
+			if(succConstRw.containsKey(state) )
+			{
+				double crw = succConstRw.get(state);
+				succConstRw.put(state, crw/(1-pro));
+			}
 		}
 	}
 	
@@ -382,7 +362,9 @@ public class UtilReachReward {
 		for(int st : values.keySet())
 		{
 			if(fullExplored.contains(st))
+			{
 				stack.push(st);
+			}
 		}
 		
 		while(!stack.isEmpty())
@@ -405,14 +387,17 @@ public class UtilReachReward {
 				{
 					values.put(i, p*pro);
 				}
-				if(fullExplored.contains(i))
+				if(fullExplored.contains(i) && !stack.contains(i))
 				{
 					stack.push(i);
 				}
 			}
-			double srw = succConstRw.containsKey(st)? succConstRw.get(st) : 0;
-			double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
-			succConstRw.put(state, crw+ srw*pro);
+			if(succConstRw.containsKey(st) || succConstRw.containsKey(state))
+			{
+				double srw = succConstRw.containsKey(st)? succConstRw.get(st) : 0;
+				double crw = succConstRw.containsKey(state)? succConstRw.get(state) : 0;
+				succConstRw.put(state, crw+ srw*pro);
+			}
 		}
 		succStateRw.put(state, values);
 	}
@@ -436,19 +421,26 @@ public class UtilReachReward {
 	private static UCTNode chooseSuccByUCT(UCTNode node, List<UCTNode> successors)
 	{
 		double UCTValue = 0;
-		int index = 0;
+		List<Integer> indexes = new ArrayList<Integer>();
 		double B = estimateB(node);
 		for(int i=0;i<successors.size();i++)
 		{
 			UCTNode succ = successors.get(i);
 			double currValue = B * Math.sqrt(Math.log(node.getVisitedTimes()) / succ.getVisitedTimes()) + succ.getR();
+			
 			if(currValue > UCTValue || UCTValue == 0)
 			{
 				UCTValue = currValue;
-				index = i;
+				indexes.clear();
+				indexes.add(i);
+			}
+			if(currValue == UCTValue)
+			{
+				indexes.add(i);
 			}
 		}
-		return successors.get(index);
+		int index = random.nextInt(indexes.size());
+		return successors.get(indexes.get(index));
 	}
 
 
@@ -471,12 +463,6 @@ public class UtilReachReward {
 			node.setR(Double.POSITIVE_INFINITY);
 		else
 			node.setR(0);
-		
-//		if(!succStateRw.containsKey(state))
-//		{
-//			Map<Integer, Double> sm = new HashMap<Integer, Double>();
-//			succStateRw.put(state, sm);
-//		}
 		return node;
 	}
 	

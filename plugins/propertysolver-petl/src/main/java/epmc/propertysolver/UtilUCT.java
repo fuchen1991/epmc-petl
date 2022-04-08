@@ -275,8 +275,6 @@ public class UtilUCT {
 					rs = succ.getProbability() * rollout_min_onthefly_maxnotB(succ, depth-1, fixedActions,min,newVisitedStates);
 				}
 				res += rs;
-//				if(res > 1)
-//					System.out.println(res);
 			}
 		}
 		if(res > node.getR())

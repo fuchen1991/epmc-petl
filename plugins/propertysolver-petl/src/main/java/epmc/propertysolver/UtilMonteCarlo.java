@@ -37,7 +37,6 @@ public class UtilMonteCarlo {
 	private static EquivalenceClasses equivalenceClasses;
 	private static Random random;
 	private static int seed = 1000;
-//	private static Map<Integer, MonteCarloNode> monterCarloNodes;
 	private static List<FixedAction> fixedActions;
 	private static Map<Integer, RolloutNode> rolloutNodes;
 	
@@ -60,9 +59,6 @@ public class UtilMonteCarlo {
         printTimeInterval = options.getInteger(OptionsUCT.PRINT_TIME_INTERVAL);
         seed = options.getInteger(OptionsUCT.RANDOM_SEED);
         random = new Random(seed);
-        
-//        monterCarloNodes = new HashMap<Integer, MonteCarloNode>();
-        
         
         System.out.println(graph.getNumNodes() + " nodes");
 	}
@@ -140,10 +136,6 @@ public class UtilMonteCarlo {
 			rollout(min, root, visited);
 			
 			double res = rolloutNodes.get(state).getValue("1");
-//			if(res == -1)
-//				res = 0;
-//			System.out.println(res);
-//			System.exit(0);
 			if((min && result > res) || (!min && result < res))
 			{
 				result = res;
@@ -170,17 +162,6 @@ public class UtilMonteCarlo {
 	
 	private static void rollout(boolean min, MonteCarloNode node,  Set<Integer> visited)
 	{
-//		System.out.println("enter " + node.getState() + "  " + node.isDecision());
-//		if(!node.isDecision())
-//		{
-//			System.out.println(node.getSuccessors().size() + "  succ");
-//			for(MonteCarloNode succ : node.getSuccessors())
-//			{
-//				System.out.print(succ.getState() + "  ");
-//			}
-//			System.out.println();
-//		}
-
 		RolloutNode nodeRoll = constructRolloutNode(node.getState());
 		if(node.isDecision())
 		{
@@ -208,12 +189,10 @@ public class UtilMonteCarlo {
 				succ.increaseVisitedTimes();
 				if(oneStates.get(succ.getState()))
 				{
-//					System.out.println(succ.getState() + " is 1 state " + succ.getProbability(node.getState()));
 					nodeRoll.addSuccValue("1", succ.getProbability(node.getState()));
 				}
 				else if(zeroStates.get(succ.getState()))
 				{
-//					System.out.println(succ.getState() + " is 0 state " + succ.getProbability(node.getState()));
 					nodeRoll.addSuccValue("0", succ.getProbability(node.getState()));
 				}
 				else
@@ -224,10 +203,6 @@ public class UtilMonteCarlo {
 						visited.add(succ.getState());
 						rollout(min, succ, visited);
 					}
-//					else
-//					{
-//						System.out.println(succ.getState() + " has been visited");
-//					}
 				}
 			}
 		}
@@ -247,13 +222,10 @@ public class UtilMonteCarlo {
 		}
 
 		nodeRoll.setFullExplored(true);
-//		System.out.println(node.getState() + " full explored");
-//		printNode(node.getState());
 	}
 	
 	private static void replace(RolloutNode node)
 	{
-//		printNode(node);
 		Stack<RolloutNode> stack = new Stack<RolloutNode>();
 		for (String k : node.getSuccessor_values().keySet())
 		{
@@ -263,7 +235,6 @@ public class UtilMonteCarlo {
 				RolloutNode interRoll = constructRolloutNode(st);
 				if(interRoll.isFullExplored())
 				{
-//					System.out.println(interRoll.getState() + " FULL");
 					stack.add(interRoll);
 				}
 			}
@@ -288,10 +259,7 @@ public class UtilMonteCarlo {
 					if(interRoll.isFullExplored())
 						stack.add(interRoll);
 				}
-//				printNode(node);
 			}
-//			if(node.getState() == 9)
-//			System.exit(0);
 		}
 	}
 	
@@ -362,22 +330,12 @@ public class UtilMonteCarlo {
             String nextAction = ac.getName();
             MonteCarloNode succNode = constructNode(succ, false);
             succNode.setAction(state, nextAction);
-            
-//            if(succ == 990)
-//            	System.out.println(graph.getNumSuccessors(succ) + " *************");
-            
+                
             for (int index = 0; index < graph.getNumSuccessors(succ); index++)
     		{
     			int dst = graph.getSuccessorNode(succ, index);
     			double pro = ((ValueDouble) probability.get(succ, index)).getDouble();
     			MonteCarloNode dstNode = constructNode(dst, true);
-//    			System.out.println("ttttt" + dst + "   " + monterCarloNodes.containsKey(state) + "   " + dstNode.contains(succ));
-//    			if(dstNode.contains(succ))
-//    			{
-//    				System.out.println("ttttt");
-//    				dstNode.setProbability(succ, dstNode.getProbability(succ)+pro);
-//    			}
-//    			else
     			dstNode.setProbability(succ, pro);
     			succNode.addSuccessor(dstNode);
     		}
